@@ -1,7 +1,7 @@
 """Tests for SVG converter."""
 import pytest
-from parser.parser import TikzParser
-from svg.converter import SVGConverter
+from tikz2svg.parser.parser import TikzParser
+from tikz2svg.svg.converter import SVGConverter
 
 
 @pytest.fixture

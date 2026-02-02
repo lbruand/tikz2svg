@@ -1,6 +1,6 @@
 """Convert TikZ AST to SVG."""
 from typing import Dict, List, Tuple, Optional
-from parser.ast_nodes import *
+from ..parser.ast_nodes import *
 from .geometry import CoordinateTransformer
 from .styles import StyleConverter
 

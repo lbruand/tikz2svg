@@ -1,7 +1,7 @@
 """Unit tests for TikZ parser."""
 import pytest
-from parser.parser import TikzParser
-from parser.ast_nodes import *
+from tikz2svg.parser.parser import TikzParser
+from tikz2svg.parser.ast_nodes import *
 
 
 @pytest.fixture

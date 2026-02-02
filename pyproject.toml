@@ -1,9 +1,65 @@
 [project]
 name = "tikz2svg"
 version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.12"
+description = "Native Python TikZ to SVG converter using Lark parser"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Lucas Bruand", email = "lucas.bruand@gmail.com"}
+]
+keywords = ["tikz", "svg", "latex", "converter", "parser"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
-    "requests>=2.31.0",
-    "beautifulsoup4>=4.12.0",
+    "lark>=1.1.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+future = [
+    "numpy>=1.24.0",
+    "pillow>=10.0.0",
+]
+
+[project.scripts]
+tikz2svg = "tikz2svg.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/lbruand/tikz2svg"
+Repository = "https://github.com/lbruand/tikz2svg"
+Issues = "https://github.com/lbruand/tikz2svg/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["tikz2svg"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
 ]
