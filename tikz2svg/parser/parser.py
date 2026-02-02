@@ -78,11 +78,36 @@ class TikzTransformer(Transformer):
         current_operation = None
         start_coord = None
 
+        # Debug: print items
+        # print(f"DEBUG path items: {items}")
+
         i = 0
         while i < len(items):
             item = items[i]
 
-            if isinstance(item, Coordinate):
+            # Handle coordinate with modifier (e.g., (0,0) circle (1))
+            if isinstance(item, dict) and "coord" in item:
+                coord = item["coord"]
+                modifier = item.get("modifier")
+
+                if current_coord is None:
+                    # First coordinate
+                    start_coord = coord
+                    segments.append(PathSegment(operation="start", destination=coord))
+                else:
+                    # Connected coordinate
+                    segments.append(
+                        PathSegment(operation=current_operation or "--", destination=coord)
+                    )
+
+                current_coord = coord
+                current_operation = None
+
+                # Add modifier as a separate segment
+                if modifier:
+                    segments.append(PathSegment(operation=modifier, destination=coord))
+
+            elif isinstance(item, Coordinate):
                 if current_coord is None:
                     # First coordinate - this is the starting point
                     start_coord = item
@@ -107,21 +132,42 @@ class TikzTransformer(Transformer):
 
     def path_element(self, items):
         """Transform path element."""
-        if items:
-            if isinstance(items[0], str) and items[0] == "cycle":
-                return {"_type": "cycle"}
-            return items[0]
-        return None
+        # print(f"DEBUG path_element items: {items}")
+        if not items:
+            return None
+
+        # Handle CYCLE token
+        from lark import Token
+        if isinstance(items[0], Token) and items[0].type == "CYCLE":
+            return {"_type": "cycle"}
+
+        # Handle coordinate with optional modifier
+        if len(items) > 1 and isinstance(items[1], dict):
+            # Has a modifier (circle or arc)
+            return {"coord": items[0], "modifier": items[1]}
+
+        return items[0]
+
+    def path_modifier(self, items):
+        """Transform path modifier."""
+        return items[0] if items else None
 
     def path_connector(self, items):
         """Return the connector operation."""
-        if items:
-            item = items[0]
-            # Handle complex operations (arc, circle) that return dicts
-            if isinstance(item, dict):
-                return item
-            return str(item)
-        return "--"
+        if not items:
+            return "--"
+
+        # Handle .. controls .. pattern
+        if len(items) > 1:
+            for item in items:
+                if isinstance(item, dict):
+                    return item
+
+        item = items[0]
+        # Handle complex operations (arc, circle) that return dicts
+        if isinstance(item, dict):
+            return item
+        return str(item)
 
     def arc_operation(self, items):
         """Transform arc operation."""
@@ -372,6 +418,10 @@ class TikzTransformer(Transformer):
         if items:
             arrow = str(items[0])
             return {"arrow": arrow}
+
+    def multi_word_key(self, items):
+        """Transform multi-word key."""
+        return " ".join(str(item) for item in items)
 
     def key_value(self, items):
         """Transform key-value pair."""
