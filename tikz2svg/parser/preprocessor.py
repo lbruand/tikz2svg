@@ -2,12 +2,14 @@
 
 import re
 
+from ..evaluator.macro_expander import MacroExpander
+
 
 class TikzPreprocessor:
     """Preprocesses TikZ code before parsing."""
 
     def __init__(self):
-        pass
+        self.macro_expander = MacroExpander()
 
     def preprocess(self, tikz_code: str) -> str:
         """Preprocess TikZ code."""
@@ -16,6 +18,9 @@ class TikzPreprocessor:
 
         # Extract tikzpicture environments
         tikz_code = self.extract_tikzpicture(tikz_code)
+
+        # Expand macros (must be before parsing)
+        tikz_code = self.macro_expander.extract_and_expand(tikz_code)
 
         # Normalize whitespace
         tikz_code = self.normalize_whitespace(tikz_code)
