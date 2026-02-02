@@ -2,7 +2,7 @@
 
 import math
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from .context import EvaluationContext
 
@@ -67,7 +67,7 @@ class MathEvaluator:
             result = self._safe_eval(processed)
             return float(result)
         except Exception as e:
-            raise ValueError(f"Failed to evaluate expression '{expr}': {e}")
+            raise ValueError(f"Failed to evaluate expression '{expr}': {e}") from e
 
     def _process_expression(self, expr: str) -> str:
         """
@@ -189,7 +189,7 @@ class MathEvaluator:
             result = eval(expr, safe_namespace)
             return result
         except Exception as e:
-            raise ValueError(f"Evaluation error: {e}")
+            raise ValueError(f"Evaluation error: {e}") from e
 
     def evaluate_coordinate_value(self, value: Any) -> float:
         """

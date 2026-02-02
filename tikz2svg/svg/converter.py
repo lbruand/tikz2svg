@@ -160,7 +160,10 @@ class SVGConverter:
                     else:
                         center = self.coord_transformer.tikz_to_svg(0, 0)
 
-                    radius = self._eval_value(circle_spec.get("radius", 1.0)) * self.coord_transformer.scale
+                    radius = (
+                        self._eval_value(circle_spec.get("radius", 1.0))
+                        * self.coord_transformer.scale
+                    )
                     # Draw circle as path (M, A, A, Z)
                     cx, cy = center
                     path_data.append(f"M {cx - radius:.2f} {cy}")
@@ -406,7 +409,7 @@ class SVGConverter:
             # Try to evaluate if it looks like an expression
             if isinstance(value, str):
                 # Check if it's a variable reference (single word that might be a variable)
-                if value.isalpha() and not value in ["true", "false", "none"]:
+                if value.isalpha() and value not in ["true", "false", "none"]:
                     # Try as variable first
                     try:
                         evaluated[key] = self.evaluator.evaluate(f"\\{value}")
@@ -498,7 +501,7 @@ class SVGConverter:
                     if isinstance(value, str):
                         try:
                             value_eval = parent_evaluator.evaluate(value)
-                        except:
+                        except Exception:
                             value_eval = value
                     else:
                         value_eval = value
@@ -511,14 +514,13 @@ class SVGConverter:
                             if isinstance(val, str):
                                 try:
                                     val = parent_evaluator.evaluate(val)
-                                except:
+                                except Exception:
                                     pass
                             self.context.set_variable(var_name, val)
 
                 # Handle evaluate clause
                 if loop.evaluate_clause:
                     eval_info = loop.evaluate_clause
-                    source_var = eval_info["source"]
                     target_var = eval_info["target"]
                     expression = eval_info["expression"]
 

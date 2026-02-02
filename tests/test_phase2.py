@@ -100,7 +100,9 @@ class TestEnhancedPaths:
 
     def test_smooth_curve(self, parser, converter):
         """Test smooth curve with controls."""
-        tikz = r"\begin{tikzpicture}\draw (0,0) .. controls (1,1) and (2,1) .. (3,0);\end{tikzpicture}"
+        tikz = (
+            r"\begin{tikzpicture}\draw (0,0) .. controls (1,1) and (2,1) .. (3,0);\end{tikzpicture}"
+        )
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
@@ -149,7 +151,9 @@ class TestLineStyles:
 
     def test_line_join(self, parser, converter):
         """Test line join styles."""
-        tikz = r"\begin{tikzpicture}\draw[line join=round] (0,0) -- (1,0) -- (1,1);\end{tikzpicture}"
+        tikz = (
+            r"\begin{tikzpicture}\draw[line join=round] (0,0) -- (1,0) -- (1,1);\end{tikzpicture}"
+        )
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 

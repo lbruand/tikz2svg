@@ -151,6 +151,7 @@ class TikzTransformer(Transformer):
 
         # Handle CYCLE token
         from lark import Token
+
         if isinstance(items[0], Token) and items[0].type == "CYCLE":
             return {"_type": "cycle"}
 
@@ -538,7 +539,7 @@ class TikzTransformer(Transformer):
                     start_num = float(start)
                     step_num = float(step_val)
                     step = step_num - start_num
-                except:
+                except Exception:
                     step = 1
             else:
                 # Unexpected position, treat as simple list
@@ -564,7 +565,7 @@ class TikzTransformer(Transformer):
                 else:
                     values.append(start_val)  # Zero step, just return start
                 return values
-            except:
+            except Exception:
                 # If evaluation fails, return the range as a dict for later evaluation
                 return [{"range": True, "start": start, "end": end, "step": step}]
         else:
