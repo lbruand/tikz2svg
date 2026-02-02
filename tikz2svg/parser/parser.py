@@ -391,37 +391,81 @@ class TikzTransformer(Transformer):
             }
         return {}
 
-    def foreach_range(self, items):
-        """Transform foreach range (0,...,10)."""
-        # items[0] = start, items[1] = ',', items[2] = '...', items[3] = ',', items[4] = end
-        start = str(items[0])
-        end = str(items[4]) if len(items) > 4 else str(items[2])
-        return {"range": True, "start": start, "end": end, "step": 1}
+    def foreach_item(self, items):
+        """Transform a single foreach item (could be DOTDOTDOT or a value)."""
+        from lark import Token
+
+        if len(items) == 1 and isinstance(items[0], Token) and items[0].type == "DOTDOTDOT":
+            return "..."
+        # Otherwise it's a foreach_value, which is already transformed
+        return items[0] if items else None
 
     def foreach_value_list(self, items):
-        """Transform foreach value list."""
-        values = []
-        for item in items:
-            if isinstance(item, dict) and "range" in item:
-                # Expand range
-                start = item["start"]
-                end = item["end"]
-                step = item.get("step", 1)
-                # Evaluate expressions
+        """Transform foreach value list - handles ranges and simple lists.
+
+        After filtering commas, items can be:
+        - [val1, val2, val3] - simple list
+        - [val1, '...', val2] - range without step
+        - [val1, val2, '...', val3] - range with step
+        """
+        # items are foreach_item results, commas are already filtered by Lark
+        # Look for '...' in the list
+        dotdotdot_idx = None
+        for i, item in enumerate(items):
+            if item == "...":
+                dotdotdot_idx = i
+                break
+
+        if dotdotdot_idx is not None:
+            # This is a range
+            if dotdotdot_idx == 1:
+                # Simple range: {start, ..., end}
+                start = str(items[0])
+                end = str(items[2]) if len(items) > 2 else "0"
+                step = 1
+            elif dotdotdot_idx == 2:
+                # Range with step: {start, step_val, ..., end}
+                start = str(items[0])
+                step_val = str(items[1])
+                end = str(items[3]) if len(items) > 3 else "0"
+
+                # Calculate step from start and step_val
                 try:
-                    start_val = int(float(start))
-                    end_val = int(float(end))
-                    step_val = int(float(step))
-                    values.extend(range(start_val, end_val + 1, step_val))
+                    start_num = float(start)
+                    step_num = float(step_val)
+                    step = step_num - start_num
                 except:
-                    values.append(item)
-            elif isinstance(item, (list, tuple)):
-                # Pair of values
-                values.append(item)
+                    step = 1
             else:
-                # Single value - keep as string for evaluation later
-                values.append(item)
-        return values
+                # Unexpected position, treat as simple list
+                return [item for item in items if item != "..."]
+
+            # Expand range
+            try:
+                start_val = float(start)
+                end_val = float(end)
+                step = float(step)
+
+                # Generate range values
+                values = []
+                current = start_val
+                if step > 0:
+                    while current <= end_val + 1e-10:  # Small epsilon for float comparison
+                        values.append(current)
+                        current += step
+                elif step < 0:
+                    while current >= end_val - 1e-10:
+                        values.append(current)
+                        current += step
+                else:
+                    values.append(start_val)  # Zero step, just return start
+                return values
+            except:
+                # If evaluation fails, return the range as a dict for later evaluation
+                return [{"range": True, "start": start, "end": end, "step": step}]
+        else:
+            # Simple list: just return the values
+            return items
 
     def foreach_value(self, items):
         """Transform single foreach value."""

@@ -108,10 +108,12 @@ foreach_option: "evaluate" "=" "\\" CNAME "as" "\\" CNAME "using" math_expr
 
 foreach_values: "{" foreach_value_list "}"
 
-foreach_value_list: foreach_range
-                  | foreach_value ("," foreach_value)*
+// Flexible foreach value list - handles ranges and lists
+// Transformer will interpret based on presence of DOTDOTDOT
+foreach_value_list: foreach_item ("," foreach_item)*
 
-foreach_range: math_expr "," DOTDOTDOT "," math_expr  // Special case: single range value
+foreach_item: DOTDOTDOT
+            | foreach_value
 
 foreach_value: math_expr "/" math_expr    // Pair of values
              | math_expr
