@@ -227,7 +227,16 @@ class SVGConverter:
                     # Default to line
                     path_data.append(f"L {x:.2f} {y:.2f}")
 
-                current_pos = (x, y)
+                # Update current position
+                # For relative coordinates with '+' operator, don't update position
+                # For '++' or absolute coordinates, do update
+                if segment.destination.system == "relative":
+                    operator = segment.destination.modifiers.get("operator", "++")
+                    if operator == "++":
+                        current_pos = (x, y)
+                    # else: operator is '+', keep current_pos unchanged
+                else:
+                    current_pos = (x, y)
 
         if path.closed:
             path_data.append("Z")
@@ -313,14 +322,31 @@ class SVGConverter:
 
         elif coord.system == "relative":
             # Relative to current position
-            if current_pos and len(coord.values) >= 2:
-                dx = self._eval_value(coord.values[0])
-                dy = self._eval_value(coord.values[1])
+            if current_pos:
+                # Check the inner coordinate system
+                inner_system = coord.modifiers.get("inner_system", "cartesian")
+
+                if inner_system == "cartesian" and len(coord.values) >= 2:
+                    dx = self._eval_value(coord.values[0])
+                    dy = self._eval_value(coord.values[1])
+                elif inner_system == "polar" and len(coord.values) >= 2:
+                    # Convert polar to cartesian delta
+                    angle = self._eval_value(coord.values[0])
+                    radius = self._eval_value(coord.values[1])
+                    dx, dy = self.coord_transformer.polar_to_cartesian(angle, radius)
+                else:
+                    dx, dy = 0, 0
+
                 # Convert delta to SVG space
                 dx_svg = dx * self.coord_transformer.scale
                 dy_svg = -dy * self.coord_transformer.scale  # Flip Y
                 return (current_pos[0] + dx_svg, current_pos[1] + dy_svg)
             else:
+                # No current position, treat as absolute
+                if len(coord.values) >= 2:
+                    x = self._eval_value(coord.values[0])
+                    y = self._eval_value(coord.values[1])
+                    return self.coord_transformer.tikz_to_svg(x, y)
                 return self.coord_transformer.tikz_to_svg(0, 0)
 
         # Default

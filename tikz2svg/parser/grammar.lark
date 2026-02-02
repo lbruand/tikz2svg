@@ -23,7 +23,11 @@ filldraw_stmt: "\\filldraw" options? path ";"
 path: path_element (path_connector path_element)*
 
 path_element: CYCLE
+            | relative_coordinate node_label? path_modifier?
             | coordinate node_label? path_modifier?
+
+relative_coordinate: PLUSPLUS coordinate
+                   | PLUS coordinate
 
 path_modifier: circle_operation
              | arc_operation
@@ -67,7 +71,6 @@ coordinate: "(" coord_spec ")"
 coord_spec: cartesian_coord
           | polar_coord
           | named_coord
-          | relative_coord
 
 cartesian_coord: math_expr "," math_expr
 
@@ -75,10 +78,7 @@ polar_coord: math_expr ":" math_expr
 
 named_coord: CNAME anchor?
 
-relative_coord: "++" "(" coord_spec ")"
-              | "+" "(" coord_spec ")"
-
-anchor: "." CNAME
+anchor: "." CNAME+  // Supports multi-word anchors like "north east"
 
 // Nodes
 node_stmt: "\\node" node_options? node_name? node_position? "{" text "}" ";"
@@ -171,6 +171,8 @@ text: TEXT_CONTENT
 quoted_string: ESCAPED_STRING
 
 // Terminals
+PLUSPLUS.10: "++"     // High priority - before SIGNED_NUMBER
+PLUS.9: "+"           // High priority - before SIGNED_NUMBER
 DOTDOTDOT.10: "..."  // High priority
 CYCLE: "cycle"
 COLOR_SPEC: /[a-zA-Z]+(!([0-9]+|[a-zA-Z]+))+/

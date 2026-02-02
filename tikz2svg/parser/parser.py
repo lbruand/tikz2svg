@@ -232,6 +232,24 @@ class TikzTransformer(Transformer):
                 controls.append(item)
         return {"_type": "controls", "points": controls}
 
+    def relative_coordinate(self, items):
+        """Transform relative coordinate (++ or +)."""
+        from lark import Token
+
+        # items[0] is the operator (++ or +), items[1] is the coordinate
+        operator = items[0].value if isinstance(items[0], Token) else str(items[0])
+        inner_coord = items[1]
+
+        # Create a relative coordinate that wraps the inner coordinate
+        # Store the operator in modifiers and the inner coordinate's values
+        if isinstance(inner_coord, Coordinate):
+            return Coordinate(
+                system="relative",
+                values=inner_coord.values,
+                modifiers={"operator": operator, "inner_system": inner_coord.system},
+            )
+        return Coordinate(system="relative", values=[0, 0], modifiers={"operator": operator})
+
     def coordinate(self, items):
         """Transform coordinate specification."""
         return items[0]
@@ -268,8 +286,12 @@ class TikzTransformer(Transformer):
         return coord
 
     def anchor(self, items):
-        """Return anchor name."""
-        return str(items[0])
+        """Return anchor name (can be multi-word like 'north east')."""
+        from lark import Token
+
+        # Join multiple CNAMEs with space
+        parts = [str(item.value if isinstance(item, Token) else item) for item in items]
+        return " ".join(parts)
 
     def node_stmt(self, items):
         """Transform node statement."""
