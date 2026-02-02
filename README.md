@@ -2,8 +2,11 @@
 
 A high-performance native Python TikZ to SVG converter that replaces the pdflatex/pdf2svg pipeline with a pure Python solution.
 
+[![CI](https://github.com/lbruand/tikz2svg/actions/workflows/ci.yml/badge.svg)](https://github.com/lbruand/tikz2svg/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/lbruand/tikz2svg/actions/workflows/quality.yml/badge.svg)](https://github.com/lbruand/tikz2svg/actions/workflows/quality.yml)
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![codecov](https://codecov.io/gh/lbruand/tikz2svg/branch/main/graph/badge.svg)](https://codecov.io/gh/lbruand/tikz2svg)
 
 ## Features
 

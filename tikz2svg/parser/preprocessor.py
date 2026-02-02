@@ -1,4 +1,5 @@
 """TikZ preprocessor for cleaning and normalizing input."""
+
 import re
 
 
@@ -24,24 +25,24 @@ class TikzPreprocessor:
     def remove_comments(self, tikz_code: str) -> str:
         """Remove LaTeX comments (% to end of line)."""
         lines = []
-        for line in tikz_code.split('\n'):
+        for line in tikz_code.split("\n"):
             # Find % that's not escaped
-            match = re.search(r'(?<!\\)%', line)
+            match = re.search(r"(?<!\\)%", line)
             if match:
                 # Remove everything from % onwards
-                line = line[:match.start()]
+                line = line[: match.start()]
             lines.append(line)
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def extract_tikzpicture(self, tikz_code: str) -> str:
         """Extract just the tikzpicture environment(s)."""
         # Find all tikzpicture environments
-        pattern = r'\\begin{tikzpicture}.*?\\end{tikzpicture}'
+        pattern = r"\\begin{tikzpicture}.*?\\end{tikzpicture}"
         matches = re.findall(pattern, tikz_code, re.DOTALL)
 
         if matches:
             # Return all tikzpicture environments concatenated
-            return '\n'.join(matches)
+            return "\n".join(matches)
         else:
             # If no tikzpicture found, return original (might already be just tikzpicture)
             return tikz_code
@@ -49,9 +50,9 @@ class TikzPreprocessor:
     def normalize_whitespace(self, tikz_code: str) -> str:
         """Normalize whitespace while preserving structure."""
         # Remove leading/trailing whitespace from lines
-        lines = [line.strip() for line in tikz_code.split('\n')]
+        lines = [line.strip() for line in tikz_code.split("\n")]
 
         # Remove empty lines
         lines = [line for line in lines if line]
 
-        return '\n'.join(lines)
+        return "\n".join(lines)

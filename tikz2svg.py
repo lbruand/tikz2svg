@@ -7,7 +7,8 @@ You can also run: python -m tikz2svg.cli
 """
 
 import sys
+
 from tikz2svg.cli import main
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

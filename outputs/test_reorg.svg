@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  <path d="M 250.00 250.00 L 306.70 250.00" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 250.00 250.00 L 250.00 193.30" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 250.00 250.00 L 306.70 193.30" style="stroke: #FF0000; fill: none; stroke-width: 2.0px"/>
+  <path d="M 306.70 250.00 L 250.00 193.30" style="stroke: #0000FF; fill: none; stroke-width: 1.0px"/>
+  <path d="M 335.05 250.00 L 363.40 250.00 L 349.23 221.65" style="stroke: none; fill: #00FF00"/>
+  <path d="M 391.75 221.65 L 274.55 235.82" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <text x="278.35" y="221.65" style="font-size: 12px; fill: #000000; font-family: sans-serif" text-anchor="middle" dominant-baseline="middle">Center</text>
+  <text x="335.05" y="241.50" style="font-size: 12px; fill: #000000; font-family: sans-serif" text-anchor="middle" dominant-baseline="middle">Triangle</text>
+  <path d="M 420.10 250.00 L 448.45 221.65" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+</svg>

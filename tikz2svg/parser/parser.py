@@ -1,7 +1,9 @@
 """TikZ parser using Lark."""
+
 from pathlib import Path
-from typing import Any, List, Dict
-from lark import Lark, Transformer, Token, Tree
+
+from lark import Lark, Token, Transformer
+
 from .ast_nodes import *
 from .preprocessor import TikzPreprocessor
 
@@ -15,8 +17,8 @@ class TikzTransformer(Transformer):
         statements = []
 
         for item in items:
-            if isinstance(item, dict) and item.get('_type') == 'options':
-                options = item['options']
+            if isinstance(item, dict) and item.get("_type") == "options":
+                options = item["options"]
             elif isinstance(item, ASTNode):
                 statements.append(item)
 
@@ -24,7 +26,7 @@ class TikzTransformer(Transformer):
 
     def tikz_options(self, items):
         """Transform tikzpicture options."""
-        return {'_type': 'options', 'options': items[0] if items else {}}
+        return {"_type": "options", "options": items[0] if items else {}}
 
     def statement(self, items):
         """Pass through statement."""
@@ -41,7 +43,7 @@ class TikzTransformer(Transformer):
             elif isinstance(item, Path):
                 path = item
 
-        return DrawStatement(command='draw', options=options, path=path or Path())
+        return DrawStatement(command="draw", options=options, path=path or Path())
 
     def fill_stmt(self, items):
         """Transform fill statement."""
@@ -54,7 +56,7 @@ class TikzTransformer(Transformer):
             elif isinstance(item, Path):
                 path = item
 
-        return DrawStatement(command='fill', options=options, path=path or Path())
+        return DrawStatement(command="fill", options=options, path=path or Path())
 
     def filldraw_stmt(self, items):
         """Transform filldraw statement."""
@@ -67,7 +69,7 @@ class TikzTransformer(Transformer):
             elif isinstance(item, Path):
                 path = item
 
-        return DrawStatement(command='filldraw', options=options, path=path or Path())
+        return DrawStatement(command="filldraw", options=options, path=path or Path())
 
     def path(self, items):
         """Transform path into segments."""
@@ -85,23 +87,19 @@ class TikzTransformer(Transformer):
                     # First coordinate - this is the starting point
                     start_coord = item
                     # Create a segment to mark the start
-                    segments.append(PathSegment(
-                        operation='start',
-                        destination=item
-                    ))
+                    segments.append(PathSegment(operation="start", destination=item))
                 else:
                     # We have a previous coordinate, create a segment
-                    segments.append(PathSegment(
-                        operation=current_operation or '--',
-                        destination=item
-                    ))
+                    segments.append(
+                        PathSegment(operation=current_operation or "--", destination=item)
+                    )
                 current_coord = item
                 current_operation = None
             elif isinstance(item, str):
                 # This is a path connector
                 current_operation = item
-            elif isinstance(item, dict) and item.get('_type') == 'cycle':
-                segments.append(PathSegment(operation='cycle'))
+            elif isinstance(item, dict) and item.get("_type") == "cycle":
+                segments.append(PathSegment(operation="cycle"))
 
             i += 1
 
@@ -110,8 +108,8 @@ class TikzTransformer(Transformer):
     def path_element(self, items):
         """Transform path element."""
         if items:
-            if isinstance(items[0], str) and items[0] == 'cycle':
-                return {'_type': 'cycle'}
+            if isinstance(items[0], str) and items[0] == "cycle":
+                return {"_type": "cycle"}
             return items[0]
         return None
 
@@ -119,7 +117,7 @@ class TikzTransformer(Transformer):
         """Return the connector operation."""
         if items:
             return str(items[0])
-        return '--'
+        return "--"
 
     def coordinate(self, items):
         """Transform coordinate specification."""
@@ -133,25 +131,25 @@ class TikzTransformer(Transformer):
         """Transform Cartesian coordinate."""
         x = float(items[0])
         y = float(items[1])
-        return Coordinate(system='cartesian', values=[x, y])
+        return Coordinate(system="cartesian", values=[x, y])
 
     def polar_coord(self, items):
         """Transform polar coordinate."""
         angle = float(items[0])
         radius = float(items[1])
-        return Coordinate(system='polar', values=[angle, radius])
+        return Coordinate(system="polar", values=[angle, radius])
 
     def named_coord(self, items):
         """Transform named coordinate."""
         name = str(items[0])
         anchor = items[1] if len(items) > 1 else None
-        return Coordinate(system='named', name=name, values=[])
+        return Coordinate(system="named", name=name, values=[])
 
     def relative_coord(self, items):
         """Transform relative coordinate."""
         # items[0] is '++' or '+', items[1] is the coordinate
         coord = items[-1]  # The actual coordinate
-        coord.system = 'relative'
+        coord.system = "relative"
         return coord
 
     def anchor(self, items):
@@ -167,9 +165,9 @@ class TikzTransformer(Transformer):
 
         for item in items:
             if isinstance(item, dict):
-                if '_type' in item:
-                    if item['_type'] == 'node_name':
-                        name = item['name']
+                if "_type" in item:
+                    if item["_type"] == "node_name":
+                        name = item["name"]
                 else:
                     options = item
             elif isinstance(item, str):
@@ -181,7 +179,7 @@ class TikzTransformer(Transformer):
 
     def node_name(self, items):
         """Extract node name."""
-        return {'_type': 'node_name', 'name': str(items[0])}
+        return {"_type": "node_name", "name": str(items[0])}
 
     def node_position(self, items):
         """Extract node position."""
@@ -249,7 +247,9 @@ class TikzTransformer(Transformer):
                 # Range like 0,...,5
                 if len(item) == 3:
                     start, step, end = item
-                    values.extend(range(int(start), int(end) + 1, int(step) if step != '...' else 1))
+                    values.extend(
+                        range(int(start), int(end) + 1, int(step) if step != "..." else 1)
+                    )
                 else:
                     values.append(item)
             else:
@@ -262,7 +262,7 @@ class TikzTransformer(Transformer):
             return float(items[0])
         elif len(items) == 3:
             # Range: start, ..., end
-            return [float(items[0]), '...', float(items[2])]
+            return [float(items[0]), "...", float(items[2])]
         elif len(items) == 2:
             # Pair: value1/value2
             return (float(items[0]), float(items[1]))
@@ -318,7 +318,10 @@ class TikzTransformer(Transformer):
         elif isinstance(item, Token):
             return str(item.value)
         elif isinstance(item, list):
-            return ' '.join(str(i) if isinstance(i, Token) else str(i.value) if hasattr(i, 'value') else str(i) for i in item)
+            return " ".join(
+                str(i) if isinstance(i, Token) else str(i.value) if hasattr(i, "value") else str(i)
+                for i in item
+            )
         return str(item)
 
     def value(self, items):
@@ -340,7 +343,7 @@ class TikzTransformer(Transformer):
             return str(items[0])
         else:
             # Mixed color like blue!30!white
-            return '!'.join(str(item) for item in items)
+            return "!".join(str(item) for item in items)
 
     def number(self, items):
         """Transform number."""
@@ -376,12 +379,13 @@ class TikzParser:
     def __init__(self):
         """Initialize parser with grammar."""
         import os
+
         current_dir = os.path.dirname(os.path.abspath(__file__))
         grammar_path = os.path.join(current_dir, "grammar.lark")
-        with open(grammar_path, 'r') as f:
+        with open(grammar_path, "r") as f:
             grammar = f.read()
 
-        self.parser = Lark(grammar, parser='lalr', transformer=TikzTransformer())
+        self.parser = Lark(grammar, parser="lalr", transformer=TikzTransformer())
         self.preprocessor = TikzPreprocessor()
 
     def parse(self, tikz_code: str) -> TikzPicture:
@@ -396,6 +400,6 @@ class TikzParser:
 
     def parse_file(self, file_path: str) -> TikzPicture:
         """Parse TikZ code from file."""
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             content = f.read()
         return self.parse(content)

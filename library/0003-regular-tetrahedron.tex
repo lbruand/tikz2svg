@@ -1,0 +1,95 @@
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+\usepackage{ifthen}
+\begin{document}
+\newcommand{\tetrahedron}[3][(0,0,0)]{
+\tdplotsetmaincoords{#2}{#3}
+\begin{tikzpicture}[
+maincolor/.style=cyan,
+scale=1.5,
+tdplot_main_coords,
+axis/.style={-stealth},
+mainline/.style={maincolor,thick},
+invisibleline/.style={cyan,densely dashed},
+]
+% axis
+\draw[axis](-1.5,0,0)--(1.5,0,0)node[pos=1.1]{$x$};
+\draw[axis](0,-1.5,0)--(0,1.5,0)node[pos=1.1]{$y$};
+\draw[axis](0,0,-1)--(0,0,2)node[pos=1.1]{$z$};
+
+% vertices
+\coordinate[shift={#1}] (A) at (60:1);
+\coordinate[shift={#1}] (B) at (180:1);
+\coordinate[shift={#1}] (C) at (300:1);
+\coordinate[shift={#1}] (O) at (0,0,{sqrt(2)});
+
+% fill faces
+\fill[maincolor,opacity=0.1](A)--(B)--(C)--cycle;
+\fill[maincolor,opacity=0.1](O)--(B)--(C)--cycle;
+\fill[maincolor,opacity=0.1](A)--(O)--(C)--cycle;
+\fill[maincolor,opacity=0.1](A)--(B)--(O)--cycle;
+
+% inner product
+\pgfmathparse{-sin(\tdplotmaintheta)*sin(\tdplotmainphi)+(1+cos(60))*sin(\tdplotmaintheta)*cos(\tdplotmainphi)/sin(60)+cos(\tdplotmaintheta)/sqrt(2)>0}
+\pgfmathsetmacro{\OBCprod}{\pgfmathresult}
+\pgfmathparse{-sin(\tdplotmaintheta)*sin(\tdplotmainphi)-(1+cos(60))*sin(\tdplotmaintheta)*cos(\tdplotmainphi)/sin(60)+cos(\tdplotmaintheta)/sqrt(2)>0}
+\pgfmathsetmacro{\OABprod}{\pgfmathresult}
+\pgfmathparse{sin(\tdplotmaintheta)*sin(\tdplotmainphi)/cos(60)+cos(\tdplotmaintheta)/sqrt(2)>0}
+\pgfmathsetmacro{\OCAprod}{\pgfmathresult}
+\pgfmathparse{-cos(\tdplotmaintheta)>0}
+\pgfmathsetmacro{\ABCprod}{\pgfmathresult}
+
+\ifthenelse{\ABCprod=0 \and \OABprod=0 \and \OBCprod=0 \and \OCAprod=1}{
+\draw[invisibleline](O)--(B) (A)--(B) (C)--(B); \draw[mainline](A)--(O)--(C)--cycle; % 0001
+}{
+\ifthenelse{\ABCprod=0 \and \OABprod=0 \and \OBCprod=1 \and \OCAprod=0}{
+\draw[invisibleline](O)--(A) (B)--(A) (C)--(A); \draw[mainline](O)--(B)--(C)--cycle; % 0010
+}{
+\ifthenelse{\ABCprod=0 \and \OABprod=0 \and \OBCprod=1 \and \OCAprod=1}{
+\draw[mainline](O)--(C) (O)--(A)--(C) (O)--(B)--(C);\draw[invisibleline](A)--(B); % 0011
+}{
+\ifthenelse{\ABCprod=0 \and \OABprod=1 \and \OBCprod=0 \and \OCAprod=0}{
+\draw[invisibleline](O)--(C) (A)--(C) (C)--(B); \draw[mainline](A)--(B)--(O)--cycle; % 0100
+}{
+\ifthenelse{\ABCprod=0 \and \OABprod=1 \and \OBCprod=0 \and \OCAprod=1}{
+\draw[mainline](O)--(A) (O)--(B)--(A) (O)--(C)--(A);\draw[invisibleline](B)--(C); % 0101
+}{
+\ifthenelse{\ABCprod=0 \and \OABprod=1 \and \OBCprod=1 \and \OCAprod=0}{
+\draw[mainline](O)--(B) (O)--(A)--(B) (O)--(C)--(B);\draw[invisibleline](A)--(C); % 0110
+}{
+\ifthenelse{\ABCprod=0 \and \OABprod=1 \and \OBCprod=1 \and \OCAprod=1}{
+\draw[mainline](O)--(A) (O)--(B) (O)--(C) (A)--(B)--(C)--cycle; % 0111
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=0 \and \OBCprod=0 \and \OCAprod=0}{
+\draw[invisibleline](O)--(A) (O)--(B) (O)--(C); \draw[mainline](A)--(B)--(C)--cycle; % 1000
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=0 \and \OBCprod=0 \and \OCAprod=1}{
+\draw[mainline](A)--(C) (A)--(O)--(C) (A)--(B)--(C);\draw[invisibleline](O)--(B); % 1001
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=0 \and \OBCprod=1 \and \OCAprod=0}{
+\draw[mainline](B)--(C) (B)--(A)--(C) (B)--(O)--(C);\draw[invisibleline](A)--(O); % 1010
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=0 \and \OBCprod=1 \and \OCAprod=1}{
+\draw[mainline](O)--(A) (O)--(B) (O)--(C) (A)--(B)--(C)--cycle; % 1011
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=1 \and \OBCprod=0 \and \OCAprod=0}{
+\draw[mainline](A)--(B) (A)--(C)--(B) (A)--(O)--(B);\draw[invisibleline](C)--(O); % 1100
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=1 \and \OBCprod=0 \and \OCAprod=1}{
+\draw[mainline](O)--(A) (O)--(B) (O)--(C) (A)--(B)--(C)--cycle; % 1101
+}{
+\ifthenelse{\ABCprod=1 \and \OABprod=1 \and \OBCprod=1 \and \OCAprod=0}{
+\draw[mainline](O)--(A) (O)--(B) (O)--(C) (A)--(B)--(C)--cycle; % 1110
+}{%
+}}}}}}}}}}}}}}
+
+% draw points
+\foreach \P in{A,B,C,O}
+\path(0,0,{sqrt(2)/3})--(\P)node[pos=1.2]{\P};
+\end{tikzpicture}
+}
+
+\tetrahedron{60}{35}
+
+\end{document}

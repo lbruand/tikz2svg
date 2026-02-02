@@ -1,7 +1,9 @@
 """Unit tests for TikZ parser."""
+
 import pytest
-from tikz2svg.parser.parser import TikzParser
+
 from tikz2svg.parser.ast_nodes import *
+from tikz2svg.parser.parser import TikzParser
 
 
 @pytest.fixture
@@ -27,7 +29,7 @@ class TestBasicParsing:
         assert isinstance(ast, TikzPicture)
         assert len(ast.statements) == 1
         assert isinstance(ast.statements[0], DrawStatement)
-        assert ast.statements[0].command == 'draw'
+        assert ast.statements[0].command == "draw"
 
     def test_multiple_lines(self, parser):
         """Test parsing multiple connected lines."""
@@ -73,16 +75,16 @@ class TestOptions:
         tikz = r"\begin{tikzpicture}\draw[red] (0,0) -- (1,1);\end{tikzpicture}"
         ast = parser.parse(tikz)
         stmt = ast.statements[0]
-        assert 'red' in stmt.options
-        assert stmt.options['red'] is True
+        assert "red" in stmt.options
+        assert stmt.options["red"] is True
 
     def test_key_value_option(self, parser):
         """Test key-value option."""
         tikz = r"\begin{tikzpicture}\draw[color=red] (0,0) -- (1,1);\end{tikzpicture}"
         ast = parser.parse(tikz)
         stmt = ast.statements[0]
-        assert 'color' in stmt.options
-        assert stmt.options['color'] == 'red'
+        assert "color" in stmt.options
+        assert stmt.options["color"] == "red"
 
     def test_multiple_options(self, parser):
         """Test multiple options."""
@@ -101,7 +103,7 @@ class TestDrawCommands:
         ast = parser.parse(tikz)
         stmt = ast.statements[0]
         assert isinstance(stmt, DrawStatement)
-        assert stmt.command == 'fill'
+        assert stmt.command == "fill"
 
     def test_filldraw_command(self, parser):
         """Test filldraw command."""
@@ -109,7 +111,7 @@ class TestDrawCommands:
         ast = parser.parse(tikz)
         stmt = ast.statements[0]
         assert isinstance(stmt, DrawStatement)
-        assert stmt.command == 'filldraw'
+        assert stmt.command == "filldraw"
 
     def test_multiple_statements(self, parser):
         """Test multiple draw statements."""

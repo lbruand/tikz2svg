@@ -1,0 +1,129 @@
+\documentclass{beamer}
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+\usepackage{ifthen}
+
+% beamer settings
+\definecolor{blackboard}{HTML}{00552E}
+\setbeamercolor{background canvas}{bg=blackboard}
+
+\begin{document}
+
+\newcommand{\hexprism}[2]{
+\tdplotsetmaincoords{#1}{#2}
+\colorlet{maincolor}{white}
+\begin{tikzpicture}[
+tdplot_main_coords,
+axis/.style={-stealth},
+mainline/.style={maincolor,very thick,line join=bevel},
+invisibleline/.style={maincolor,densely dashed},
+]
+
+\pgfmathsetmacro{\r}{1} % Length of a side of the bottom
+\pgfmathsetmacro{\h}{4} % height
+    
+\foreach \P/\ang in{A/0,B/60,C/120,D/180,E/240,F/300}
+\coordinate (\P b) at (\ang:\r);
+
+\foreach \P/\ang in{A/0,B/60,C/120,D/180,E/240,F/300}
+\coordinate (\P t) at ({\r*cos(\ang)},{\r*sin(\ang)},\h);
+
+\foreach \P in{A,B,C,D,E,F}
+{\node[maincolor!50!gray] at(\P t){\scriptsize \P t};
+\node[maincolor!50!gray] at(\P b){\scriptsize \P b};
+}
+
+\tikzset{
+  ABrec/.style={insert path={(Ab)--(Bb)--(Bt)--(At)--cycle}},
+  BCrec/.style={insert path={(Bb)--(Cb)--(Ct)--(Bt)--cycle}},
+  CDrec/.style={insert path={(Cb)--(Db)--(Dt)--(Ct)--cycle}},
+  DErec/.style={insert path={(Db)--(Eb)--(Et)--(Dt)--cycle}},
+  EFrec/.style={insert path={(Eb)--(Fb)--(Ft)--(Et)--cycle}}, 
+  FArec/.style={insert path={(Fb)--(Ab)--(At)--(Ft)--cycle}},
+}
+
+% camera vector: ({sin(\tdplotmaintheta)*sin(\tdplotmainphi)},{-sin(\tdplotmaintheta)*cos(\tdplotmainphi)},{cos(\tdplotmaintheta)})
+% inner product
+% side inner product
+\pgfmathparse{cos(30)*sin(\tdplotmaintheta)*sin(\tdplotmainphi)-sin(30)*sin(\tdplotmaintheta)*cos(\tdplotmainphi) >= 0}
+\pgfmathsetmacro{\ABprod}{\pgfmathresult}
+\pgfmathparse{cos(90)*sin(\tdplotmaintheta)*sin(\tdplotmainphi)-sin(90)*sin(\tdplotmaintheta)*cos(\tdplotmainphi) >= 0}
+\pgfmathsetmacro{\BCprod}{\pgfmathresult}
+\pgfmathparse{cos(150)*sin(\tdplotmaintheta)*sin(\tdplotmainphi)-sin(150)*sin(\tdplotmaintheta)*cos(\tdplotmainphi) >= 0}
+\pgfmathsetmacro{\CDprod}{\pgfmathresult}
+\pgfmathparse{cos(210)*sin(\tdplotmaintheta)*sin(\tdplotmainphi)-sin(210)*sin(\tdplotmaintheta)*cos(\tdplotmainphi) >= 0}
+\pgfmathsetmacro{\DEprod}{\pgfmathresult}
+\pgfmathparse{cos(270)*sin(\tdplotmaintheta)*sin(\tdplotmainphi)-sin(270)*sin(\tdplotmaintheta)*cos(\tdplotmainphi) >= 0}
+\pgfmathsetmacro{\EFprod}{\pgfmathresult}
+\pgfmathparse{cos(330)*sin(\tdplotmaintheta)*sin(\tdplotmainphi)-sin(330)*sin(\tdplotmaintheta)*cos(\tdplotmainphi) >= 0}
+\pgfmathsetmacro{\FAprod}{\pgfmathresult}
+
+% bottom inner product
+\pgfmathparse{cos(\tdplotmaintheta) >= 0}
+\pgfmathsetmacro{\topprod}{\pgfmathresult}
+
+\ifthenelse{
+    \topprod=1
+}{\draw[mainline](At)--(Bt)--(Ct)--(Dt)--(Et)--(Ft)--cycle;
+    \ifthenelse{\ABprod=1 \and \BCprod=1 \and \CDprod=1}{
+        \draw[invisibleline](Db)--(Eb)--(Fb)--(Ab); \draw[invisibleline](Eb)--(Et) (Fb)--(Ft); 
+        \draw[mainline,ABrec];\draw[mainline,BCrec];\draw[mainline,CDrec];
+    }{ \ifthenelse{\BCprod=1 \and \CDprod=1 \and \DEprod=1}{
+        \draw[invisibleline](Eb)--(Fb)--(Ab)--(Bb); \draw[invisibleline](Fb)--(Ft) (Ab)--(At); 
+        \draw[mainline,BCrec];\draw[mainline,CDrec];\draw[mainline,DErec]; 
+    }{\ifthenelse{\CDprod=1 \and \DEprod=1 \and \EFprod=1}{
+        \draw[invisibleline](Fb)--(Ab)--(Bb)--(Cb); \draw[invisibleline](Ab)--(At) (Bb)--(Bt); 
+        \draw[mainline,CDrec];\draw[mainline,DErec];\draw[mainline,EFrec]; 
+    }{\ifthenelse{\DEprod=1 \and \EFprod=1 \and \FAprod=1}{
+        \draw[invisibleline](Ab)--(Bb)--(Cb)--(Db); \draw[invisibleline](Bb)--(Bt) (Cb)--(Ct); 
+        \draw[mainline,DErec];\draw[mainline,EFrec];\draw[mainline,FArec]; 
+    }{\ifthenelse{\EFprod=1 \and \FAprod=1 \and \ABprod=1}{
+        \draw[invisibleline](Bb)--(Cb)--(Db)--(Eb); \draw[invisibleline](Cb)--(Ct) (Db)--(Dt); 
+        \draw[mainline,EFrec];\draw[mainline,FArec];\draw[mainline,ABrec]; 
+    }{\ifthenelse{\FAprod=1 \and \ABprod=1 \and \BCprod=1}{
+        \draw[invisibleline](Cb)--(Db)--(Eb)--(Fb); \draw[invisibleline](Db)--(Dt) (Eb)--(Et);  
+        \draw[mainline,FArec];\draw[mainline,ABrec];\draw[mainline,BCrec];
+    }{}}}}}}
+}{\draw[mainline](Ab)--(Bb)--(Cb)--(Db)--(Eb)--(Fb)--cycle;
+    \ifthenelse{\ABprod=1 \and \BCprod=1 \and \CDprod=1}{
+        \draw[invisibleline](Dt)--(Et)--(Ft)--(At); \draw[invisibleline](Eb)--(Et) (Fb)--(Ft); 
+        \draw[mainline,ABrec];\draw[mainline,BCrec];\draw[mainline,CDrec];
+    }{ \ifthenelse{\BCprod=1 \and \CDprod=1 \and \DEprod=1}{
+        \draw[invisibleline](Et)--(Ft)--(At)--(Bt); \draw[invisibleline](Fb)--(Ft) (Ab)--(At); 
+        \draw[mainline,BCrec];\draw[mainline,CDrec];\draw[mainline,DErec]; 
+    }{\ifthenelse{\CDprod=1 \and \DEprod=1 \and \EFprod=1}{
+        \draw[invisibleline](Ft)--(At)--(Bt)--(Ct); \draw[invisibleline](Ab)--(At) (Bb)--(Bt); 
+        \draw[mainline,CDrec];\draw[mainline,DErec];\draw[mainline,EFrec]; 
+    }{\ifthenelse{\DEprod=1 \and \EFprod=1 \and \FAprod=1}{
+        \draw[invisibleline](At)--(Bt)--(Ct)--(Dt); \draw[invisibleline](Bb)--(Bt) (Cb)--(Ct); 
+        \draw[mainline,DErec];\draw[mainline,EFrec];\draw[mainline,FArec]; 
+    }{\ifthenelse{\EFprod=1 \and \FAprod=1 \and \ABprod=1}{
+        \draw[invisibleline](Bt)--(Ct)--(Dt)--(Et); \draw[invisibleline](Cb)--(Ct) (Db)--(Dt); 
+        \draw[mainline,EFrec];\draw[mainline,FArec];\draw[mainline,ABrec]; 
+    }{\ifthenelse{\FAprod=1 \and \ABprod=1 \and \BCprod=1}{
+        \draw[invisibleline](Ct)--(Dt)--(Et)--(Ft); \draw[invisibleline](Db)--(Dt) (Eb)--(Et);  
+        \draw[mainline,FArec];\draw[mainline,ABrec];\draw[mainline,BCrec];
+    }{}}}}}}
+}
+\end{tikzpicture}
+}
+
+\foreach \a in{0,5,...,360}{
+\begingroup
+\begin{frame}
+\centering
+  \hexprism{70}{\a}
+\end{frame}
+\endgroup
+}
+
+\foreach \a in{70,75,...,430}{
+\begingroup
+\begin{frame}
+\centering
+  \hexprism{\a}{5}
+\end{frame}
+\endgroup
+}
+
+\end{document}

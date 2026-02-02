@@ -1,5 +1,7 @@
 """Tests for SVG converter."""
+
 import pytest
+
 from tikz2svg.parser.parser import TikzParser
 from tikz2svg.svg.converter import SVGConverter
 
@@ -25,9 +27,9 @@ class TestBasicConversion:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert '<svg' in svg
-        assert '<path' in svg
-        assert 'd=' in svg
+        assert "<svg" in svg
+        assert "<path" in svg
+        assert "d=" in svg
 
     def test_multiple_lines(self, parser, converter):
         """Test converting multiple lines."""
@@ -35,11 +37,11 @@ class TestBasicConversion:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert '<svg' in svg
-        assert '<path' in svg
+        assert "<svg" in svg
+        assert "<path" in svg
         # Should have M, L, L, L commands
-        assert 'M' in svg
-        assert 'L' in svg
+        assert "M" in svg
+        assert "L" in svg
 
     def test_colored_line(self, parser, converter):
         """Test line with color."""
@@ -47,9 +49,9 @@ class TestBasicConversion:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert 'stroke' in svg
+        assert "stroke" in svg
         # Should contain red color
-        assert 'FF0000' in svg or 'red' in svg.lower()
+        assert "FF0000" in svg or "red" in svg.lower()
 
     def test_thick_line(self, parser, converter):
         """Test line with thickness."""
@@ -57,7 +59,7 @@ class TestBasicConversion:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert 'stroke-width' in svg
+        assert "stroke-width" in svg
 
     def test_filled_shape(self, parser, converter):
         """Test filled shape."""
@@ -65,8 +67,8 @@ class TestBasicConversion:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert 'fill' in svg
-        assert 'stroke: none' in svg
+        assert "fill" in svg
+        assert "stroke: none" in svg
 
     def test_node(self, parser, converter):
         """Test text node."""
@@ -74,8 +76,8 @@ class TestBasicConversion:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert '<text' in svg
-        assert 'Hello' in svg
+        assert "<text" in svg
+        assert "Hello" in svg
 
 
 class TestCoordinateSystems:
@@ -87,8 +89,8 @@ class TestCoordinateSystems:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert '<svg' in svg
-        assert '<path' in svg
+        assert "<svg" in svg
+        assert "<path" in svg
 
     def test_named_coordinates(self, parser, converter):
         """Test named coordinates."""
@@ -101,7 +103,7 @@ class TestCoordinateSystems:
         ast = parser.parse(tikz)
         svg = converter.convert(ast)
 
-        assert '<path' in svg
+        assert "<path" in svg
 
 
 class TestIntegration:
@@ -109,18 +111,18 @@ class TestIntegration:
 
     def test_input01(self, parser, converter):
         """Test converting input01.tex."""
-        ast = parser.parse_file('inputs/input01.tex')
+        ast = parser.parse_file("inputs/input01.tex")
         svg = converter.convert(ast)
 
         # Check basic SVG structure
-        assert svg.startswith('<svg')
-        assert svg.endswith('</svg>')
-        assert '<path' in svg
-        assert '<text' in svg
-        assert 'Lorem ipsum' in svg
+        assert svg.startswith("<svg")
+        assert svg.endswith("</svg>")
+        assert "<path" in svg
+        assert "<text" in svg
+        assert "Lorem ipsum" in svg
 
         # Should have 3 draw statements
-        assert svg.count('<path') == 3
+        assert svg.count("<path") == 3
 
         # Should have 1 text node
-        assert svg.count('<text') == 1
+        assert svg.count("<text") == 1

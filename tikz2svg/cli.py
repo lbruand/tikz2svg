@@ -7,9 +7,10 @@ Usage:
     tikz2svg input.tex  # outputs to input.svg
 """
 
-import sys
 import argparse
+import sys
 from pathlib import Path
+
 from .parser.parser import TikzParser
 from .svg.converter import SVGConverter
 
@@ -26,7 +27,7 @@ def convert_file(input_path: str, output_path: str = None, width: int = 500, hei
     """
     # Default output path
     if output_path is None:
-        output_path = Path(input_path).with_suffix('.svg')
+        output_path = Path(input_path).with_suffix(".svg")
 
     print(f"Converting {input_path} to {output_path}...")
 
@@ -39,10 +40,10 @@ def convert_file(input_path: str, output_path: str = None, width: int = 500, hei
         # Convert to SVG
         converter = SVGConverter(width=width, height=height)
         svg = converter.convert(ast)
-        print(f"  ✓ Generated SVG")
+        print("  ✓ Generated SVG")
 
         # Write output
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(svg)
         print(f"  ✓ Wrote {output_path}")
 
@@ -58,27 +59,27 @@ def convert_file(input_path: str, output_path: str = None, width: int = 500, hei
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description='Convert TikZ diagrams to SVG',
+        description="Convert TikZ diagrams to SVG",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   tikz2svg input.tex output.svg
   tikz2svg input.tex
   tikz2svg input.tex --width 800 --height 600
-        """
+        """,
     )
 
-    parser.add_argument('input', help='Input TikZ file (.tex)')
-    parser.add_argument('output', nargs='?', help='Output SVG file (optional)')
-    parser.add_argument('--width', type=int, default=500, help='SVG width (default: 500)')
-    parser.add_argument('--height', type=int, default=500, help='SVG height (default: 500)')
-    parser.add_argument('--scale', type=float, default=28.35, help='Scale factor (default: 28.35)')
-    parser.add_argument('--version', action='version', version='%(prog)s 0.1.0')
+    parser.add_argument("input", help="Input TikZ file (.tex)")
+    parser.add_argument("output", nargs="?", help="Output SVG file (optional)")
+    parser.add_argument("--width", type=int, default=500, help="SVG width (default: 500)")
+    parser.add_argument("--height", type=int, default=500, help="SVG height (default: 500)")
+    parser.add_argument("--scale", type=float, default=28.35, help="Scale factor (default: 28.35)")
+    parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
 
     args = parser.parse_args()
 
     return convert_file(args.input, args.output, args.width, args.height)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

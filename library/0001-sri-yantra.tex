@@ -1,0 +1,111 @@
+\documentclass[tikz,border=2mm]{standalone}
+
+\usetikzlibrary{backgrounds,math}
+
+\begin{document}
+
+\pgfdeclarelayer{minus1}
+\pgfdeclarelayer{minus2}
+\pgfdeclarelayer{minus3}
+\pgfsetlayers{minus3,minus2,minus1,background,main}
+
+\begin{tikzpicture}
+
+% Base parameters
+\def\cx{150}
+\def\cy{150}
+\def\scale{0.025}
+
+\def\triangleData{%
+  {53.65669559977147}{123.20508075688774}{250}{246.34330440022853}{0}% D1
+  {52.984011026495736}{174.24660560764943}{50}{247.01598897350425}{1}% U1
+  {98.71823312733801}{220.03828947357886}{123.20508075688774}{201.281766872662}{1}% U3
+  {78.26467997914015}{197.92315674002487}{78.10499177949904}{221.73532002085986}{1}% U2
+  {90.4856922951427}{78.10499177949904}{160.66014976539617}{209.51430770485734}{0}% D3
+  {80.98384838952128}{103.12199145016105}{220.03828947357886}{219.0161516104787}{0}% D2
+  {114.9488500600036}{160.66014976539617}{103.12199145016105}{185.0511499399964}{1}% U4
+  {116.35142605010424}{134.30757626706648}{197.92315674002487}{183.64857394989576}{0}% D4
+  {124.61190803072795}{144.79777263138968}{174.24660560764943}{175.38809196927207}{0}% D5
+}
+
+% Function to transform and draw triangle
+% Usage: \drawtriangle{x1}{y1}{x2}{y2}{x3}{y3}
+\newcommand{\drawtriangle}[6]{%
+    \draw[thick] ({((#1-\cx)*\scale)},{(-(#2-\cy)*\scale)}) -- 
+                 ({((#3-\cx)*\scale)},{(-(#4-\cy)*\scale)}) -- 
+                 ({((#5-\cx)*\scale)},{(-(#6-\cy)*\scale)}) -- cycle;%
+}
+
+% Macro to draw a triangle from array data
+% Arguments: left_x, top/base_y, center_y, right_x, type
+\newcommand{\drawTriangleFromData}[5]{%
+  \ifnum#5=0
+    % Downward triangle: left_x, top_y, center_x, center_y, right_x, top_y
+    \drawtriangle{#1}{#2}{\cx}{#3}{#4}{#2}%
+  \else
+    % Upward triangle: left_x, base_y, center_x, center_y, right_x, base_y
+    \drawtriangle{#1}{#2}{\cx}{#3}{#4}{#2}%
+  \fi
+}
+
+% Recursive macro to process triangle data
+% Stops when it encounters \relax as the first argument
+\def\processTriangleData#1#2#3#4#5{%
+  \ifx\relax#1\relax
+    % End of data reached
+  \else
+    \drawTriangleFromData{#1}{#2}{#3}{#4}{#5}%
+    \expandafter\processTriangleData
+  \fi
+}
+
+% Outer circle
+\draw[thick, fill=white!30!white] (0,0) circle (2.5cm);
+
+% Center bindu
+\draw[fill=red] (0,0) circle (0.1cm);
+
+% Draw all triangles from triangleData array
+\expandafter\processTriangleData\triangleData\relax\relax\relax\relax\relax
+
+%Step-11
+
+\begin{scope}[on background layer]
+\draw [fill=yellow] circle (3cm);
+
+\foreach \i [evaluate=\i as \start using 22.5+45*\i] in {0,...,7}
+	\draw[fill=green!30!black] (\start:2.5) .. controls ({\start-5}:2.85) and ({\start-17.5}:2.75) .. ({\start-22.5}:3) .. controls ({\start-27.5}:2.75) and ({\start-40}:2.85) .. ({\start-45}:2.5) arc [start angle={\start-45}, delta angle=45, radius=2.5cm]--cycle;
+\end{scope}
+
+%Step-12
+
+\begin{pgfonlayer}{minus1}
+\draw [fill=orange] circle (3.5cm);
+
+\foreach \i [evaluate=\i as \start using 11.25+22.5*\i] in {0,...,15}
+	\draw[fill=blue!30] (\start:3)  .. controls ({\start-2.5}:3.35) and ({\start-8.75}:3.25) .. ({\start-11.25}:3.5) .. controls ({\start-13.75}:3.25) and  ({\start-20}:3.35).. ({\start-22.5}:3) arc [start angle={\start-11.25}, delta angle=22.5, radius=3.5cm]--cycle;
+\end{pgfonlayer}
+
+%Step-13
+
+\begin{pgfonlayer}{minus2}
+\draw [fill=yellow!39] circle (4cm);
+\draw [line width=2mm, blue!70!black] circle (3.75cm);
+\end{pgfonlayer}
+
+%Step-14
+
+\begin{pgfonlayer}{minus3}
+\node [fill=black, minimum size=8cm] (b) {}; 
+\node [fill=black, minimum width=9.25cm, minimum height=3cm] (bh) {}; 
+\node [fill=black, minimum height=9.25cm, minimum width=3cm] (bv) {}; 
+\node [fill=black, minimum height=6mm, minimum width=6cm] at (bv.north) (bn) {}; 
+\node [fill=black, minimum height=6mm, minimum width=6cm] at (bv.south) (bs) {}; 
+\node [fill=black, minimum width=6mm, minimum height=6cm] at (bh.west) (bw) {}; 
+\node [fill=black, minimum width=6mm, minimum height=6cm] at (bh.east) (be) {}; 
+\draw [red!60!black,line width=1mm]% 
+(be.south west)-|(be.north east)-|(bh.north-|be.west)-|(b.north east)-|(bv.east|-bn.south)-|(bn.north east)-|(bn.south west)-|(b.north-|bv.west)-|(b.west|-bh.north)-|(bw.north east)-|(bw.south west)-|(bw.east|-bh.south)-|(b.south west)-|(bv.west|-bs.north)-|(bs.south west)-|(bs.north east)-|(bv.east|-b.south)-|(b.east|-bh.south)-|cycle;
+
+\end{pgfonlayer}
+\end{tikzpicture}
+\end{document}

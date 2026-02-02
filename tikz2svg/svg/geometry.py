@@ -1,4 +1,5 @@
 """Geometric transformations for TikZ to SVG conversion."""
+
 import math
 from typing import Tuple
 
@@ -53,8 +54,9 @@ class CoordinateTransformer:
         y = radius * math.sin(angle_rad)
         return (x, y)
 
-    def calculate_arc_path(self, start_x: float, start_y: float,
-                          radius: float, start_angle: float, end_angle: float) -> str:
+    def calculate_arc_path(
+        self, start_x: float, start_y: float, radius: float, start_angle: float, end_angle: float
+    ) -> str:
         """
         Calculate SVG arc path data.
 
@@ -78,4 +80,4 @@ class CoordinateTransformer:
         # Sweep flag (clockwise)
         sweep = 1 if end_angle > start_angle else 0
 
-        return f'A {radius} {radius} 0 {large_arc} {sweep} {end_x:.2f} {end_y:.2f}'
+        return f"A {radius} {radius} 0 {large_arc} {sweep} {end_x:.2f} {end_y:.2f}"
