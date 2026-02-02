@@ -116,8 +116,74 @@ class TikzTransformer(Transformer):
     def path_connector(self, items):
         """Return the connector operation."""
         if items:
-            return str(items[0])
+            item = items[0]
+            # Handle complex operations (arc, circle) that return dicts
+            if isinstance(item, dict):
+                return item
+            return str(item)
         return "--"
+
+    def arc_operation(self, items):
+        """Transform arc operation."""
+        if items:
+            arc_spec = items[0]
+            return {"_type": "arc", "spec": arc_spec}
+        return {"_type": "arc"}
+
+    def arc_spec(self, items):
+        """Transform arc specification."""
+        if len(items) == 3:
+            # (start:end:radius) format
+            return {
+                "format": "angles",
+                "start_angle": float(items[0]),
+                "end_angle": float(items[1]),
+                "radius": float(items[2]),
+            }
+        else:
+            # [key=value] format
+            spec = {}
+            for item in items:
+                if isinstance(item, dict):
+                    spec.update(item)
+            return {"format": "options", **spec}
+
+    def arc_option(self, items):
+        """Transform arc option."""
+        # Items will be like ["start", "angle", "=", number]
+        if len(items) >= 3:
+            key = " ".join(str(items[i]) for i in range(len(items) - 1) if str(items[i]) != "=")
+            value = float(items[-1])
+            return {key.replace(" ", "_"): value}
+        return {}
+
+    def circle_operation(self, items):
+        """Transform circle operation."""
+        if items:
+            circle_spec = items[0]
+            return {"_type": "circle", "spec": circle_spec}
+        return {"_type": "circle"}
+
+    def circle_spec(self, items):
+        """Transform circle specification."""
+        if items:
+            # Extract radius value
+            radius = float(items[0])
+            unit = items[1] if len(items) > 1 else "cm"
+            return {"radius": radius, "unit": str(unit) if unit else "cm"}
+        return {"radius": 1.0, "unit": "cm"}
+
+    def unit(self, items):
+        """Transform unit specification."""
+        return str(items[0]) if items else "cm"
+
+    def controls_clause(self, items):
+        """Transform Bezier controls clause."""
+        controls = []
+        for item in items:
+            if isinstance(item, Coordinate):
+                controls.append(item)
+        return {"_type": "controls", "points": controls}
 
     def coordinate(self, items):
         """Transform coordinate specification."""
@@ -300,6 +366,12 @@ class TikzTransformer(Transformer):
             # flag
             key = self._to_string(item)
             return {key: True}
+
+    def arrow_spec(self, items):
+        """Transform arrow specification."""
+        if items:
+            arrow = str(items[0])
+            return {"arrow": arrow}
 
     def key_value(self, items):
         """Transform key-value pair."""

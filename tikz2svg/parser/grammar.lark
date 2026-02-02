@@ -26,13 +26,36 @@ path_element: coordinate node_label?
             | "cycle"
 
 path_connector: "--"
-              | ".."
+              | ".." controls_clause?
               | "|-"
               | "-|"
               | "to" options?
-              | "arc" options?
-              | "circle" options?
+              | arc_operation
+              | circle_operation
               | "rectangle"
+
+// Enhanced path operations
+controls_clause: "controls" coordinate ("and" coordinate)?
+
+arc_operation: "arc" arc_spec
+
+arc_spec: "(" number ":" number ":" number ")"  // (start:end:radius)
+        | "[" arc_options "]"
+
+arc_options: arc_option ("," arc_option)*
+
+arc_option: "start" "angle" "=" number
+          | "end" "angle" "=" number
+          | "radius" "=" number
+          | "x" "radius" "=" number
+          | "y" "radius" "=" number
+
+circle_operation: "circle" circle_spec
+
+circle_spec: "(" number unit? ")"
+           | "[" "radius" "=" number unit? "]"
+
+unit: "cm" | "mm" | "pt" | "em" | "ex"
 
 node_label: "node" options? "{" text "}"
 
@@ -96,18 +119,23 @@ option_list: option ("," option)*
 
 option: key_value
       | flag
+      | arrow_spec
+
+arrow_spec: "->"
+          | "<-"
+          | "<->"
+          | "|->"
+          | "<-|"
 
 key_value: CNAME "=" value
 
-flag: CNAME
+flag: COLOR_SPEC | CNAME
 
 ?value: number
       | quoted_string
       | "{" text "}"
-      | color_value
+      | COLOR_SPEC
       | CNAME
-
-color_value: CNAME "!" NUMBER "!" CNAME
 
 // Numbers and math expressions
 ?number: SIGNED_NUMBER
@@ -128,6 +156,7 @@ text: TEXT_CONTENT
 quoted_string: ESCAPED_STRING
 
 // Terminals
+COLOR_SPEC: /[a-zA-Z]+(!([0-9]+|[a-zA-Z]+))+/
 CNAME: /[a-zA-Z_][a-zA-Z0-9_\-]*/
 TEXT_CONTENT: /[^{}]+/
 NUMBER: /[0-9]+\.?[0-9]*/

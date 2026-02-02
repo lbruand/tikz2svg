@@ -178,16 +178,112 @@ class StyleConverter:
         if color_str in self.COLORS:
             return self.COLORS[color_str]
 
-        # Check for mixed color (e.g., "blue!30!white")
+        # Check for mixed color (e.g., "blue!30!white" or "red!50")
         if "!" in color_str:
-            # Simplified: just use first color
-            # Full implementation would blend colors
-            parts = color_str.split("!")
-            if parts[0] in self.COLORS:
-                return self.COLORS[parts[0]]
+            return self.blend_colors(color_str)
 
         # Default to black
         return "#000000"
+
+    def blend_colors(self, color_spec: str) -> str:
+        """
+        Blend colors according to TikZ specification.
+
+        Examples:
+            "blue!30!white" -> 30% blue, 70% white
+            "red!50" -> 50% red, 50% white (default)
+            "green!20!yellow!80" -> complex blend
+
+        Args:
+            color_spec: Color specification with ! separators
+
+        Returns:
+            Blended color as hex string
+        """
+        parts = color_spec.split("!")
+
+        # Simple case: color!percentage
+        if len(parts) == 2:
+            color1 = parts[0]
+            try:
+                percentage = float(parts[1])
+                # Blend with white
+                return self.mix_two_colors(color1, "white", percentage / 100.0)
+            except ValueError:
+                # parts[1] is another color, equal blend
+                color2 = parts[1]
+                return self.mix_two_colors(color1, color2, 0.5)
+
+        # Complex case: color!percentage!color
+        if len(parts) >= 3:
+            color1 = parts[0]
+            try:
+                percentage = float(parts[1]) / 100.0
+            except ValueError:
+                percentage = 0.5
+            color2 = parts[2]
+            return self.mix_two_colors(color1, color2, percentage)
+
+        # Fallback
+        if parts[0] in self.COLORS:
+            return self.COLORS[parts[0]]
+        return "#000000"
+
+    def mix_two_colors(self, color1: str, color2: str, ratio: float) -> str:
+        """
+        Mix two colors with given ratio.
+
+        Args:
+            color1: First color name or hex
+            color2: Second color name or hex
+            ratio: Ratio of color1 (0.0 to 1.0)
+
+        Returns:
+            Mixed color as hex string
+        """
+        # Get RGB values for both colors
+        rgb1 = self.color_to_rgb(color1)
+        rgb2 = self.color_to_rgb(color2)
+
+        # Mix
+        r = int(rgb1[0] * ratio + rgb2[0] * (1 - ratio))
+        g = int(rgb1[1] * ratio + rgb2[1] * (1 - ratio))
+        b = int(rgb1[2] * ratio + rgb2[2] * (1 - ratio))
+
+        # Clamp values
+        r = max(0, min(255, r))
+        g = max(0, min(255, g))
+        b = max(0, min(255, b))
+
+        return f"#{r:02X}{g:02X}{b:02X}"
+
+    def color_to_rgb(self, color: str) -> tuple:
+        """
+        Convert color name or hex to RGB tuple.
+
+        Args:
+            color: Color name or hex string
+
+        Returns:
+            (r, g, b) tuple
+        """
+        # Check if it's a named color
+        if color in self.COLORS:
+            hex_color = self.COLORS[color]
+        elif color.startswith("#"):
+            hex_color = color
+        else:
+            hex_color = "#000000"
+
+        # Parse hex
+        hex_color = hex_color.lstrip("#")
+        if len(hex_color) == 6:
+            return (
+                int(hex_color[0:2], 16),
+                int(hex_color[2:4], 16),
+                int(hex_color[4:6], 16),
+            )
+        return (0, 0, 0)
 
     def get_line_width(self, options: Dict[str, Any]) -> float:
         """Get line width from options."""

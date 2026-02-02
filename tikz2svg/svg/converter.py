@@ -30,6 +30,13 @@ class SVGConverter:
         """Convert TikZ AST to SVG string."""
         elements = []
 
+        # Check if we need arrow markers
+        has_arrows = self._check_for_arrows(ast)
+
+        # Add marker definitions if needed
+        if has_arrows:
+            elements.append(self._create_arrow_markers())
+
         # Process all statements
         for stmt in ast.statements:
             svg_element = self.visit_statement(stmt)
@@ -43,6 +50,26 @@ class SVGConverter:
 </svg>"""
 
         return svg_doc
+
+    def _check_for_arrows(self, ast: TikzPicture) -> bool:
+        """Check if any statements use arrows."""
+        for stmt in ast.statements:
+            if isinstance(stmt, DrawStatement) and "arrow" in stmt.options:
+                return True
+        return False
+
+    def _create_arrow_markers(self) -> str:
+        """Create SVG marker definitions for arrows."""
+        return """<defs>
+    <marker id="arrow-end" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/>
+    </marker>
+    <marker id="arrow-start" viewBox="0 0 10 10" refX="1" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 10 0 L 0 5 L 10 10 z" fill="context-stroke"/>
+    </marker>
+  </defs>"""
 
     def visit_statement(self, stmt: ASTNode) -> Optional[str]:
         """Visit a statement node."""
@@ -63,7 +90,18 @@ class SVGConverter:
         path_data = self.convert_path(stmt.path)
         style = self.style_converter.convert(stmt.options, stmt.command)
 
-        return f'<path d="{path_data}" style="{style}"/>'
+        # Check for arrows
+        arrow_spec = stmt.options.get("arrow", "")
+        marker_start = ""
+        marker_end = ""
+
+        if arrow_spec:
+            if "<-" in arrow_spec:
+                marker_start = ' marker-start="url(#arrow-start)"'
+            if "->" in arrow_spec:
+                marker_end = ' marker-end="url(#arrow-end)"'
+
+        return f'<path d="{path_data}" style="{style}"{marker_start}{marker_end}/>'
 
     def convert_path(self, path: Path) -> str:
         """Convert TikZ path to SVG path data."""
@@ -74,33 +112,89 @@ class SVGConverter:
         current_pos = None
 
         for i, segment in enumerate(path.segments):
-            if segment.operation == "cycle":
+            # Handle operation types
+            op = segment.operation
+
+            if op == "cycle":
                 path_data.append("Z")
                 continue
 
+            # Handle dict-based operations (arc, circle)
+            if isinstance(op, dict):
+                op_type = op.get("_type")
+
+                if op_type == "arc":
+                    arc_cmd = self.convert_arc(op.get("spec", {}), current_pos)
+                    if arc_cmd:
+                        path_data.append(arc_cmd)
+                        # Update current_pos based on arc end point
+                    continue
+
+                elif op_type == "circle":
+                    # Circle at current position
+                    circle_spec = op.get("spec", {})
+                    if current_pos and segment.destination:
+                        # Circle at specific coordinate
+                        center = self.evaluate_coordinate(segment.destination, current_pos)
+                    elif current_pos:
+                        center = current_pos
+                    else:
+                        center = self.coord_transformer.tikz_to_svg(0, 0)
+
+                    radius = circle_spec.get("radius", 1.0) * self.coord_transformer.scale
+                    # Draw circle as path (M, A, A, Z)
+                    cx, cy = center
+                    path_data.append(f"M {cx - radius:.2f} {cy}")
+                    path_data.append(f"A {radius:.2f} {radius:.2f} 0 1 0 {cx + radius:.2f} {cy}")
+                    path_data.append(f"A {radius:.2f} {radius:.2f} 0 1 0 {cx - radius:.2f} {cy}")
+                    current_pos = center
+                    continue
+
+                elif op_type == "controls":
+                    # Bezier curve with explicit control points
+                    if segment.destination and current_pos:
+                        dest = self.evaluate_coordinate(segment.destination, current_pos)
+                        controls = op.get("points", [])
+                        if len(controls) == 2:
+                            # Cubic Bezier
+                            c1 = self.evaluate_coordinate(controls[0], current_pos)
+                            c2 = self.evaluate_coordinate(controls[1], current_pos)
+                            path_data.append(
+                                f"C {c1[0]:.2f} {c1[1]:.2f} {c2[0]:.2f} {c2[1]:.2f} {dest[0]:.2f} {dest[1]:.2f}"
+                            )
+                            current_pos = dest
+                        elif len(controls) == 1:
+                            # Quadratic Bezier
+                            c1 = self.evaluate_coordinate(controls[0], current_pos)
+                            path_data.append(
+                                f"Q {c1[0]:.2f} {c1[1]:.2f} {dest[0]:.2f} {dest[1]:.2f}"
+                            )
+                            current_pos = dest
+                    continue
+
+            # Handle standard operations with destination
             if segment.destination:
                 coord = self.evaluate_coordinate(segment.destination, current_pos)
                 x, y = coord
 
-                if segment.operation == "start":
+                if op == "start":
                     # Starting point - move to start
                     path_data.append(f"M {x:.2f} {y:.2f}")
-                elif segment.operation == "--":
+                elif op == "--":
                     # Line to
                     path_data.append(f"L {x:.2f} {y:.2f}")
-                elif segment.operation == "..":
+                elif op == "..":
                     # Curve (simplified as quadratic for now)
-                    # In full implementation, would calculate Bezier control points
                     if current_pos:
                         cx = (current_pos[0] + x) / 2
                         cy = (current_pos[1] + y) / 2
                         path_data.append(f"Q {cx:.2f} {cy:.2f} {x:.2f} {y:.2f}")
                     else:
                         path_data.append(f"L {x:.2f} {y:.2f}")
-                elif segment.operation in ("|-", "-|"):
+                elif op in ("|-", "-|"):
                     # Orthogonal lines
                     if current_pos:
-                        if segment.operation == "|-":
+                        if op == "|-":
                             # Horizontal then vertical
                             path_data.append(f"L {x:.2f} {current_pos[1]:.2f}")
                             path_data.append(f"L {x:.2f} {y:.2f}")
@@ -110,6 +204,14 @@ class SVGConverter:
                             path_data.append(f"L {x:.2f} {y:.2f}")
                     else:
                         path_data.append(f"L {x:.2f} {y:.2f}")
+                elif op == "rectangle":
+                    # Rectangle from current_pos to destination
+                    if current_pos:
+                        x1, y1 = current_pos
+                        path_data.append(f"L {x:.2f} {y1:.2f}")
+                        path_data.append(f"L {x:.2f} {y:.2f}")
+                        path_data.append(f"L {x1:.2f} {y:.2f}")
+                        path_data.append("Z")
                 else:
                     # Default to line
                     path_data.append(f"L {x:.2f} {y:.2f}")
@@ -120,6 +222,59 @@ class SVGConverter:
             path_data.append("Z")
 
         return " ".join(path_data)
+
+    def convert_arc(
+        self, arc_spec: Dict[str, any], current_pos: Optional[Tuple[float, float]] = None
+    ) -> str:
+        """Convert arc specification to SVG arc command."""
+        if not arc_spec or not current_pos:
+            return ""
+
+        format_type = arc_spec.get("format", "angles")
+
+        if format_type == "angles":
+            # (start:end:radius) format
+            start_angle = arc_spec.get("start_angle", 0)
+            end_angle = arc_spec.get("end_angle", 90)
+            radius = arc_spec.get("radius", 1.0) * self.coord_transformer.scale
+
+            # Calculate end point
+            import math
+
+            start_rad = math.radians(start_angle)
+            end_rad = math.radians(end_angle)
+
+            # Arc starts at current position
+            # End point relative to start
+            dx = radius * (math.cos(end_rad) - math.cos(start_rad))
+            dy = radius * (math.sin(end_rad) - math.sin(start_rad))
+
+            end_x = current_pos[0] + dx * self.coord_transformer.scale
+            end_y = current_pos[1] - dy * self.coord_transformer.scale  # Flip Y
+
+            # Large arc flag
+            large_arc = 1 if abs(end_angle - start_angle) > 180 else 0
+            sweep = 1 if end_angle > start_angle else 0
+
+            return f"A {radius:.2f} {radius:.2f} 0 {large_arc} {sweep} {end_x:.2f} {end_y:.2f}"
+
+        else:
+            # Options format [start angle=..., end angle=..., radius=...]
+            start_angle = arc_spec.get("start_angle", 0)
+            end_angle = arc_spec.get("end_angle", 90)
+            radius = arc_spec.get("radius", 1.0) * self.coord_transformer.scale
+
+            # Similar calculation as above
+            import math
+
+            end_rad = math.radians(end_angle)
+            end_x = current_pos[0] + radius * math.cos(end_rad)
+            end_y = current_pos[1] - radius * math.sin(end_rad)
+
+            large_arc = 1 if abs(end_angle - start_angle) > 180 else 0
+            sweep = 1
+
+            return f"A {radius:.2f} {radius:.2f} 0 {large_arc} {sweep} {end_x:.2f} {end_y:.2f}"
 
     def evaluate_coordinate(
         self, coord: Coordinate, current_pos: Optional[Tuple[float, float]] = None
