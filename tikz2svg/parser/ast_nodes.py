@@ -24,7 +24,7 @@ class Coordinate(ASTNode):
     """Represents a coordinate in any system."""
 
     system: str  # 'cartesian', 'polar', 'named', '3d', 'relative'
-    values: List[float] = field(default_factory=list)
+    values: List[Any] = field(default_factory=list)  # Can be float or str (for expressions)
     name: Optional[str] = None
     modifiers: Dict[str, Any] = field(default_factory=dict)  # shift, rotate, etc.
 

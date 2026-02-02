@@ -41,21 +41,21 @@ controls_clause: "controls" coordinate ("and" coordinate)?
 
 arc_operation: "arc" arc_spec
 
-arc_spec: "(" number ":" number ":" number ")"  // (start:end:radius)
+arc_spec: "(" math_expr ":" math_expr ":" math_expr ")"  // (start:end:radius)
         | "[" arc_options "]"
 
 arc_options: arc_option ("," arc_option)*
 
-arc_option: "start" "angle" "=" number
-          | "end" "angle" "=" number
-          | "radius" "=" number unit?
-          | "x" "radius" "=" number unit?
-          | "y" "radius" "=" number unit?
+arc_option: "start" "angle" "=" math_expr
+          | "end" "angle" "=" math_expr
+          | "radius" "=" math_expr unit?
+          | "x" "radius" "=" math_expr unit?
+          | "y" "radius" "=" math_expr unit?
 
 circle_operation: "circle" circle_spec
 
-circle_spec: "(" number unit? ")"
-           | "[" "radius" "=" number unit? "]"
+circle_spec: "(" math_expr unit? ")"
+           | "[" "radius" "=" math_expr unit? "]"
 
 unit: "cm" | "mm" | "pt" | "em" | "ex"
 
@@ -69,9 +69,9 @@ coord_spec: cartesian_coord
           | named_coord
           | relative_coord
 
-cartesian_coord: number "," number
+cartesian_coord: math_expr "," math_expr
 
-polar_coord: number ":" number
+polar_coord: math_expr ":" math_expr
 
 named_coord: CNAME anchor?
 
@@ -136,10 +136,10 @@ multi_word_key: CNAME CNAME+
 
 flag: COLOR_SPEC | CNAME
 
-?value: number
-      | quoted_string
+?value: quoted_string
       | "{" text "}"
       | COLOR_SPEC
+      | math_expr
       | CNAME
 
 // Numbers and math expressions

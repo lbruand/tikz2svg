@@ -179,12 +179,12 @@ class TikzTransformer(Transformer):
     def arc_spec(self, items):
         """Transform arc specification."""
         if len(items) == 3:
-            # (start:end:radius) format
+            # (start:end:radius) format - keep as strings for math expressions
             return {
                 "format": "angles",
-                "start_angle": float(items[0]),
-                "end_angle": float(items[1]),
-                "radius": float(items[2]),
+                "start_angle": str(items[0]),
+                "end_angle": str(items[1]),
+                "radius": str(items[2]),
             }
         else:
             # [key=value] format
@@ -199,7 +199,8 @@ class TikzTransformer(Transformer):
         # Items will be like ["start", "angle", "=", number]
         if len(items) >= 3:
             key = " ".join(str(items[i]) for i in range(len(items) - 1) if str(items[i]) != "=")
-            value = float(items[-1])
+            # Keep value as string for math expressions
+            value = str(items[-1])
             return {key.replace(" ", "_"): value}
         return {}
 
@@ -213,11 +214,11 @@ class TikzTransformer(Transformer):
     def circle_spec(self, items):
         """Transform circle specification."""
         if items:
-            # Extract radius value
-            radius = float(items[0])
+            # Keep radius as string for math expressions
+            radius = str(items[0]) if isinstance(items[0], Token) else items[0]
             unit = items[1] if len(items) > 1 else "cm"
             return {"radius": radius, "unit": str(unit) if unit else "cm"}
-        return {"radius": 1.0, "unit": "cm"}
+        return {"radius": "1.0", "unit": "cm"}
 
     def unit(self, items):
         """Transform unit specification."""
@@ -241,14 +242,16 @@ class TikzTransformer(Transformer):
 
     def cartesian_coord(self, items):
         """Transform Cartesian coordinate."""
-        x = float(items[0])
-        y = float(items[1])
+        # Keep as strings for later evaluation
+        x = str(items[0])
+        y = str(items[1])
         return Coordinate(system="cartesian", values=[x, y])
 
     def polar_coord(self, items):
         """Transform polar coordinate."""
-        angle = float(items[0])
-        radius = float(items[1])
+        # Keep as strings for later evaluation
+        angle = str(items[0])
+        radius = str(items[1])
         return Coordinate(system="polar", values=[angle, radius])
 
     def named_coord(self, items):
@@ -474,13 +477,35 @@ class TikzTransformer(Transformer):
         return 0.0
 
     def math_expr(self, items):
-        """Transform math expression (simplified for now)."""
+        """Transform math expression into string representation."""
+        if not items:
+            return "0"
+
         if len(items) == 1:
             item = items[0]
             if isinstance(item, Token):
-                return float(item.value)
-            return item
-        return items
+                # Could be SIGNED_NUMBER or CNAME
+                if item.type == "SIGNED_NUMBER":
+                    return item.value
+                elif item.type == "CNAME":
+                    # Variable reference without backslash - could happen in some contexts
+                    return f"\\{item.value}"
+            return str(item)
+
+        # Check for variable reference pattern: "\\" CNAME
+        if len(items) == 2 and isinstance(items[1], Token) and items[1].type == "CNAME":
+            return f"\\{items[1].value}"
+
+        # Multiple items - reconstruct expression
+        # Format: expr operator expr, or function(expr), or (expr)
+        result = ""
+        for item in items:
+            if isinstance(item, Token):
+                result += str(item.value)
+            else:
+                result += str(item)
+
+        return result
 
     def text(self, items):
         """Extract text content."""

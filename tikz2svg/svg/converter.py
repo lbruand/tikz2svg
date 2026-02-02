@@ -2,6 +2,8 @@
 
 from typing import Dict, Optional, Tuple
 
+from ..evaluator.context import EvaluationContext
+from ..evaluator.math_eval import MathEvaluator
 from ..parser.ast_nodes import *
 from .geometry import CoordinateTransformer
 from .styles import StyleConverter
@@ -25,6 +27,10 @@ class SVGConverter:
         self.coord_transformer = CoordinateTransformer(scale, width // 2, height // 2)
         self.style_converter = StyleConverter()
         self.named_coordinates: Dict[str, Tuple[float, float]] = {}
+
+        # Math evaluation
+        self.context = EvaluationContext()
+        self.evaluator = MathEvaluator(self.context)
 
     def convert(self, ast: TikzPicture) -> str:
         """Convert TikZ AST to SVG string."""
@@ -83,12 +89,17 @@ class SVGConverter:
             return self.visit_scope(stmt)
         elif isinstance(stmt, ForeachLoop):
             return self.visit_foreach_loop(stmt)
+        elif isinstance(stmt, MacroDefinition):
+            return self.visit_macro_definition(stmt)
         return None
 
     def visit_draw_statement(self, stmt: DrawStatement) -> str:
         """Convert draw statement to SVG path."""
         path_data = self.convert_path(stmt.path)
-        style = self.style_converter.convert(stmt.options, stmt.command)
+
+        # Evaluate options with variables
+        evaluated_options = self._evaluate_options(stmt.options)
+        style = self.style_converter.convert(evaluated_options, stmt.command)
 
         # Check for arrows
         arrow_spec = stmt.options.get("arrow", "")
@@ -141,7 +152,7 @@ class SVGConverter:
                     else:
                         center = self.coord_transformer.tikz_to_svg(0, 0)
 
-                    radius = circle_spec.get("radius", 1.0) * self.coord_transformer.scale
+                    radius = self._eval_value(circle_spec.get("radius", 1.0)) * self.coord_transformer.scale
                     # Draw circle as path (M, A, A, Z)
                     cx, cy = center
                     path_data.append(f"M {cx - radius:.2f} {cy}")
@@ -234,9 +245,9 @@ class SVGConverter:
 
         if format_type == "angles":
             # (start:end:radius) format
-            start_angle = arc_spec.get("start_angle", 0)
-            end_angle = arc_spec.get("end_angle", 90)
-            radius = arc_spec.get("radius", 1.0) * self.coord_transformer.scale
+            start_angle = self._eval_value(arc_spec.get("start_angle", 0))
+            end_angle = self._eval_value(arc_spec.get("end_angle", 90))
+            radius = self._eval_value(arc_spec.get("radius", 1.0)) * self.coord_transformer.scale
 
             # Calculate end point
             import math
@@ -260,9 +271,9 @@ class SVGConverter:
 
         else:
             # Options format [start angle=..., end angle=..., radius=...]
-            start_angle = arc_spec.get("start_angle", 0)
-            end_angle = arc_spec.get("end_angle", 90)
-            radius = arc_spec.get("radius", 1.0) * self.coord_transformer.scale
+            start_angle = self._eval_value(arc_spec.get("start_angle", 0))
+            end_angle = self._eval_value(arc_spec.get("end_angle", 90))
+            radius = self._eval_value(arc_spec.get("radius", 1.0)) * self.coord_transformer.scale
 
             # Similar calculation as above
             import math
@@ -281,11 +292,15 @@ class SVGConverter:
     ) -> Tuple[float, float]:
         """Evaluate a coordinate to (x, y) in SVG space."""
         if coord.system == "cartesian":
-            x, y = coord.values[0], coord.values[1]
+            # Evaluate expressions if needed
+            x = self._eval_value(coord.values[0])
+            y = self._eval_value(coord.values[1])
             return self.coord_transformer.tikz_to_svg(x, y)
 
         elif coord.system == "polar":
-            angle, radius = coord.values[0], coord.values[1]
+            # Evaluate expressions if needed
+            angle = self._eval_value(coord.values[0])
+            radius = self._eval_value(coord.values[1])
             x, y = self.coord_transformer.polar_to_cartesian(angle, radius)
             return self.coord_transformer.tikz_to_svg(x, y)
 
@@ -299,7 +314,8 @@ class SVGConverter:
         elif coord.system == "relative":
             # Relative to current position
             if current_pos and len(coord.values) >= 2:
-                dx, dy = coord.values[0], coord.values[1]
+                dx = self._eval_value(coord.values[0])
+                dy = self._eval_value(coord.values[1])
                 # Convert delta to SVG space
                 dx_svg = dx * self.coord_transformer.scale
                 dy_svg = -dy * self.coord_transformer.scale  # Flip Y
@@ -309,6 +325,73 @@ class SVGConverter:
 
         # Default
         return self.coord_transformer.tikz_to_svg(0, 0)
+
+    def _eval_value(self, value: Any) -> float:
+        """
+        Evaluate a value (may be number or expression string).
+
+        Args:
+            value: Value to evaluate
+
+        Returns:
+            Float value
+        """
+        if isinstance(value, (int, float)):
+            return float(value)
+
+        if isinstance(value, str):
+            try:
+                return self.evaluator.evaluate(value)
+            except Exception:
+                # If evaluation fails, try direct conversion
+                try:
+                    return float(value)
+                except ValueError:
+                    return 0.0
+
+        return 0.0
+
+    def _evaluate_options(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Evaluate expressions in options dictionary.
+
+        Args:
+            options: Options dictionary with possible expressions
+
+        Returns:
+            Options with evaluated values
+        """
+        from lark import Token
+
+        evaluated = {}
+        for key, value in options.items():
+            # If value is a Token, convert to string first
+            if isinstance(value, Token):
+                value = str(value.value)
+
+            # Try to evaluate if it looks like an expression
+            if isinstance(value, str):
+                # Check if it's a variable reference (single word that might be a variable)
+                if value.isalpha() and not value in ["true", "false", "none"]:
+                    # Try as variable first
+                    try:
+                        evaluated[key] = self.evaluator.evaluate(f"\\{value}")
+                        continue
+                    except Exception:
+                        pass
+
+                # Try to evaluate if it has operators or backslash
+                if "\\" in value or any(op in value for op in ["+", "-", "*", "/", "("]):
+                    try:
+                        evaluated[key] = self.evaluator.evaluate(value)
+                        continue
+                    except Exception:
+                        pass
+
+            # Keep as-is if no evaluation succeeded
+            evaluated[key] = value
+
+        return evaluated
 
     def visit_node(self, node: Node) -> str:
         """Convert node to SVG text element."""
@@ -363,3 +446,24 @@ class SVGConverter:
                     elements.append(element)
 
         return "\n  ".join(elements)
+
+    def visit_macro_definition(self, macro: MacroDefinition) -> None:
+        """
+        Process macro definition.
+
+        Stores variable in evaluation context.
+        Does not produce SVG output.
+
+        Args:
+            macro: MacroDefinition node
+        """
+        # Evaluate the body expression
+        try:
+            value = self.evaluator.evaluate(macro.body)
+            # Store in context
+            self.context.set_variable(macro.name, value)
+        except Exception:
+            # If evaluation fails, store as-is
+            self.context.set_variable(macro.name, macro.body)
+
+        return None
