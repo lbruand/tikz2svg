@@ -1,0 +1,47 @@
+\begin{tikzpicture}
+% Test all implemented features
+
+% Phase 3: Math and variables
+\pgfmathsetmacro{\radius}{2}
+\pgfmathsetmacro{\n}{5}
+
+% Phase 7: Macros
+\def\mycolor{blue}
+\newcommand{\vertex}[2]{
+    \draw[fill=#1] (#2*360/\n:\radius) circle (0.15);
+}
+
+% Phase 6: Scope with options
+\begin{scope}[thick,red]
+    % Phase 4: Foreach loop with Phase 5: polar coordinates
+    \foreach \i in {0,...,4} {
+        % Draw edges of pentagon
+        \pgfmathsetmacro{\nexti}{\i+1}
+        \draw (\i*360/\n:\radius) -- (\nexti*360/\n:\radius);
+    }
+\end{scope}
+
+% Phase 7: Using parametric macro in loop
+\foreach \i in {0,...,4} {
+    \vertex{\mycolor}{\i}
+}
+
+% Phase 6: Clipping
+\begin{scope}
+    \clip (0,0) circle (\radius*0.8);
+    \draw[fill=yellow,opacity=0.3] (-3,-3) rectangle (3,3);
+\end{scope}
+
+% Phase 5: Relative coordinates and anchors
+\node[draw,circle] (center) at (0,0) {Center};
+\draw[green,->] (center.north) -- ++(0,0.5);
+\draw[green,->] (center.south) -- ++(0,-0.5);
+
+% Phase 2: Arc and circle
+\draw[purple,dashed] (0:\radius*1.3) arc (0:180:\radius*1.3);
+
+% Phase 3: Complex math expression
+\pgfmathsetmacro{\xpos}{sqrt(2)*\radius}
+\draw[orange] (\xpos,0) circle (0.2);
+
+\end{tikzpicture}

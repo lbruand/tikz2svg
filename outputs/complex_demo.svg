@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  <g style="stroke: #FF0000; fill: none; stroke-width: 2.0px">
+    <path d="M 306.70 250.00 L 306.70 250.00" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 L 306.70 250.00" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 L 306.70 250.00" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 L 306.70 250.00" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 L 306.70 250.00" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  </g>
+  <path d="M 306.70 250.00 M 302.45 250.0 A 4.25 4.25 0 1 0 310.95 250.0 A 4.25 4.25 0 1 0 302.45 250.0" style="stroke: #0000FF; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 M 302.45 250.0 A 4.25 4.25 0 1 0 310.95 250.0 A 4.25 4.25 0 1 0 302.45 250.0" style="stroke: #0000FF; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 M 302.45 250.0 A 4.25 4.25 0 1 0 310.95 250.0 A 4.25 4.25 0 1 0 302.45 250.0" style="stroke: #0000FF; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 M 302.45 250.0 A 4.25 4.25 0 1 0 310.95 250.0 A 4.25 4.25 0 1 0 302.45 250.0" style="stroke: #0000FF; fill: none; stroke-width: 1.0px"/>
+  <path d="M 306.70 250.00 M 302.45 250.0 A 4.25 4.25 0 1 0 310.95 250.0 A 4.25 4.25 0 1 0 302.45 250.0" style="stroke: #0000FF; fill: none; stroke-width: 1.0px"/>
+  <g style="stroke: #000000; fill: none; stroke-width: 1.0px">
+    <path d="M 250.00 250.00 M 250.00 250.0 A 0.00 0.00 0 1 0 250.00 250.0 A 0.00 0.00 0 1 0 250.00 250.0" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+    <path d="M 164.95 335.05 L 335.05 164.95" style="stroke: #FFFF00; fill: none; stroke-width: 1.0px"/>
+  </g>
+  <text x="250.00" y="250.00" style="font-size: 12px; fill: #000000; font-family: sans-serif" text-anchor="middle" dominant-baseline="middle">Center</text>
+  <path d="M 250.00 250.00 L 250.00 235.82" style="stroke: #00FF00; fill: none; stroke-width: 1.0px"/>
+  <path d="M 250.00 250.00 L 250.00 264.18" style="stroke: #00FF00; fill: none; stroke-width: 1.0px"/>
+  <path d="M 250.00 250.00 A 0.00 0.00 0 0 1 250.00 250.00" style="stroke: #800080; fill: none; stroke-width: 1.0px; stroke-dasharray: 5,5"/>
+  <path d="M 250.00 250.00 M 244.33 250.0 A 5.67 5.67 0 1 0 255.67 250.0 A 5.67 5.67 0 1 0 244.33 250.0" style="stroke: #FFA500; fill: none; stroke-width: 1.0px"/>
+</svg>
