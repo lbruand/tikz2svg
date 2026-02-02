@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  <path d="M 250.00 250.00 L 533.50 -33.50" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 533.50 250.00 L 250.00 -33.50" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <path d="M 391.75 250.00 L 250.00 -33.50" style="stroke: #000000; fill: none; stroke-width: 1.0px"/>
+  <text x="391.75" y="108.25" style="font-size: 12px; fill: #000000; font-family: sans-serif" text-anchor="middle" dominant-baseline="middle">Lorem ipsum at domine standalonus</text>
+</svg>
