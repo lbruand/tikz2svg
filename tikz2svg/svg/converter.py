@@ -434,16 +434,77 @@ class SVGConverter:
         return f'<g style="{style}">\n    {content}\n  </g>'
 
     def visit_foreach_loop(self, loop: ForeachLoop) -> str:
-        """Convert foreach loop to expanded statements."""
-        # For Phase 1, simplified loop expansion
-        # Full implementation in Phase 4
+        """
+        Convert foreach loop to expanded statements.
+
+        Handles:
+        - Simple iteration over values
+        - Multiple variables (paired values)
+        - Evaluate clause for computed variables
+        - Nested loops with proper scoping
+        """
         elements = []
+
+        # Prepare loop values
+        num_vars = len(loop.variables)
+
         for value in loop.values:
-            for stmt in loop.body:
-                # TODO: Substitute loop variable with value
-                element = self.visit_statement(stmt)
-                if element:
-                    elements.append(element)
+            # Create child context for this iteration
+            parent_context = self.context
+            parent_evaluator = self.evaluator
+            self.context = self.context.create_child_context()
+            self.evaluator = MathEvaluator(self.context)
+
+            try:
+                # Set loop variable(s)
+                if num_vars == 1:
+                    # Single variable
+                    var_name = loop.variables[0]
+                    # Evaluate the value if it's a string expression
+                    if isinstance(value, str):
+                        try:
+                            value_eval = parent_evaluator.evaluate(value)
+                        except:
+                            value_eval = value
+                    else:
+                        value_eval = value
+                    self.context.set_variable(var_name, value_eval)
+                elif num_vars > 1 and isinstance(value, (tuple, list)):
+                    # Multiple variables with paired values
+                    for i, var_name in enumerate(loop.variables):
+                        if i < len(value):
+                            val = value[i]
+                            if isinstance(val, str):
+                                try:
+                                    val = parent_evaluator.evaluate(val)
+                                except:
+                                    pass
+                            self.context.set_variable(var_name, val)
+
+                # Handle evaluate clause
+                if loop.evaluate_clause:
+                    eval_info = loop.evaluate_clause
+                    source_var = eval_info["source"]
+                    target_var = eval_info["target"]
+                    expression = eval_info["expression"]
+
+                    # Evaluate the expression with current loop variable value
+                    try:
+                        result = self.evaluator.evaluate(expression)
+                        self.context.set_variable(target_var, result)
+                    except Exception:
+                        pass
+
+                # Visit body statements
+                for stmt in loop.body:
+                    element = self.visit_statement(stmt)
+                    if element:
+                        elements.append(element)
+
+            finally:
+                # Restore parent context
+                self.context = parent_context
+                self.evaluator = parent_evaluator
 
         return "\n  ".join(elements)
 

@@ -334,17 +334,30 @@ class TikzTransformer(Transformer):
         variables = []
         values = []
         body = []
+        options = {}
+        seen_list = False
 
         for item in items:
             if isinstance(item, list) and len(item) > 0:
-                if isinstance(item[0], str):
+                # First list is variables, second is values
+                if not seen_list:
                     variables = item
+                    seen_list = True
                 else:
                     values = item
+            elif isinstance(item, dict) and "evaluate" not in item:
+                # Regular options (not evaluate clause)
+                options.update(item)
+            elif isinstance(item, dict) and "evaluate" in item:
+                # Evaluate clause
+                options = item
             elif isinstance(item, ASTNode):
                 body.append(item)
 
-        return ForeachLoop(variables=variables, values=values, body=body)
+        evaluate_clause = options.get("evaluate") if options else None
+        return ForeachLoop(
+            variables=variables, values=values, evaluate_clause=evaluate_clause, body=body
+        )
 
     def foreach_vars(self, items):
         """Extract foreach variables."""
@@ -354,33 +367,79 @@ class TikzTransformer(Transformer):
         """Extract foreach values."""
         return items[0] if items else []
 
+    def foreach_options(self, items):
+        """Transform foreach options."""
+        options = {}
+        for item in items:
+            if isinstance(item, dict):
+                options.update(item)
+        return options
+
+    def foreach_option(self, items):
+        """Transform foreach option (evaluate clause)."""
+        # Items: ["evaluate", "=", var, "as", new_var, "using", expr]
+        if len(items) >= 3:
+            source_var = str(items[0])  # Variable being evaluated
+            target_var = str(items[1])  # New variable name
+            expression = str(items[2]) if len(items) > 2 else source_var
+            return {
+                "evaluate": {
+                    "source": source_var,
+                    "target": target_var,
+                    "expression": expression,
+                }
+            }
+        return {}
+
+    def foreach_range(self, items):
+        """Transform foreach range (0,...,10)."""
+        # items[0] = start, items[1] = ',', items[2] = '...', items[3] = ',', items[4] = end
+        start = str(items[0])
+        end = str(items[4]) if len(items) > 4 else str(items[2])
+        return {"range": True, "start": start, "end": end, "step": 1}
+
     def foreach_value_list(self, items):
         """Transform foreach value list."""
         values = []
         for item in items:
-            if isinstance(item, (list, tuple)):
-                # Range like 0,...,5
-                if len(item) == 3:
-                    start, step, end = item
-                    values.extend(
-                        range(int(start), int(end) + 1, int(step) if step != "..." else 1)
-                    )
-                else:
+            if isinstance(item, dict) and "range" in item:
+                # Expand range
+                start = item["start"]
+                end = item["end"]
+                step = item.get("step", 1)
+                # Evaluate expressions
+                try:
+                    start_val = int(float(start))
+                    end_val = int(float(end))
+                    step_val = int(float(step))
+                    values.extend(range(start_val, end_val + 1, step_val))
+                except:
                     values.append(item)
+            elif isinstance(item, (list, tuple)):
+                # Pair of values
+                values.append(item)
             else:
-                values.append(float(item))
+                # Single value - keep as string for evaluation later
+                values.append(item)
         return values
 
     def foreach_value(self, items):
         """Transform single foreach value."""
+        from lark import Token
+
         if len(items) == 1:
-            return float(items[0])
-        elif len(items) == 3:
-            # Range: start, ..., end
-            return [float(items[0]), "...", float(items[2])]
+            # Single value
+            return str(items[0])
         elif len(items) == 2:
             # Pair: value1/value2
-            return (float(items[0]), float(items[1]))
+            return (str(items[0]), str(items[1]))
+        elif len(items) == 5:
+            # Range: start, ..., end (with commas)
+            # items[0] = start, items[1] = ',', items[2] = '...', items[3] = ',', items[4] = end
+            return {"range": True, "start": str(items[0]), "end": str(items[4]), "step": 1}
+        elif len(items) == 3 and isinstance(items[1], Token) and items[1].type == "DOTDOTDOT":
+            # Range: start...end (without commas - shouldn't happen with current grammar but keep for safety)
+            return {"range": True, "start": str(items[0]), "end": str(items[2]), "step": 1}
         return items
 
     def macro_def(self, items):

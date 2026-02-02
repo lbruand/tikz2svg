@@ -96,17 +96,25 @@ coordinate_stmt: "\\coordinate" options? "(" CNAME ")" "at" coordinate ";"
 scope: "\\begin{scope}" options? statement* "\\end{scope}"
 
 // Foreach loop
-foreach_loop: "\\foreach" foreach_vars "in" foreach_values "{" statement* "}"
+foreach_loop: "\\foreach" foreach_vars foreach_options? "in" foreach_values "{" statement* "}"
 
 foreach_vars: "\\" CNAME ("/" "\\" CNAME)*
 
+foreach_options: "[" foreach_option_list "]"
+
+foreach_option_list: foreach_option ("," foreach_option)*
+
+foreach_option: "evaluate" "=" "\\" CNAME "as" "\\" CNAME "using" math_expr
+
 foreach_values: "{" foreach_value_list "}"
 
-foreach_value_list: foreach_value ("," foreach_value)*
+foreach_value_list: foreach_range
+                  | foreach_value ("," foreach_value)*
 
-foreach_value: number
-             | number "," "..." "," number
-             | number "/" number
+foreach_range: math_expr "," DOTDOTDOT "," math_expr  // Special case: single range value
+
+foreach_value: math_expr "/" math_expr    // Pair of values
+             | math_expr
 
 // Macro definitions
 macro_def: "\\def" "\\" CNAME "{" text "}"
@@ -161,6 +169,7 @@ text: TEXT_CONTENT
 quoted_string: ESCAPED_STRING
 
 // Terminals
+DOTDOTDOT.10: "..."  // High priority
 CYCLE: "cycle"
 COLOR_SPEC: /[a-zA-Z]+(!([0-9]+|[a-zA-Z]+))+/
 CNAME: /[a-zA-Z_][a-zA-Z0-9_\-]*/
