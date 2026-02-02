@@ -109,3 +109,24 @@ class Layer(ASTNode):
 
     name: str = ""
     statements: List[ASTNode] = field(default_factory=list)
+
+
+@dataclass
+class LayerDeclaration(ASTNode):
+    """A layer declaration (\\pgfdeclarelayer)."""
+
+    name: str = ""
+
+
+@dataclass
+class LayerSet(ASTNode):
+    """Layer ordering specification (\\pgfsetlayers)."""
+
+    layers: List[str] = field(default_factory=list)
+
+
+@dataclass
+class StyleDefinition(ASTNode):
+    """Style definition (\\tikzset)."""
+
+    styles: Dict[str, Dict[str, Any]] = field(default_factory=dict)

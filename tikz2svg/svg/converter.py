@@ -91,6 +91,14 @@ class SVGConverter:
             return self.visit_foreach_loop(stmt)
         elif isinstance(stmt, MacroDefinition):
             return self.visit_macro_definition(stmt)
+        elif isinstance(stmt, Layer):
+            return self.visit_layer(stmt)
+        elif isinstance(stmt, LayerDeclaration):
+            return self.visit_layer_declaration(stmt)
+        elif isinstance(stmt, LayerSet):
+            return self.visit_layer_set(stmt)
+        elif isinstance(stmt, StyleDefinition):
+            return self.visit_style_definition(stmt)
         return None
 
     def visit_draw_statement(self, stmt: DrawStatement) -> str:
@@ -553,4 +561,35 @@ class SVGConverter:
             # If evaluation fails, store as-is
             self.context.set_variable(macro.name, macro.body)
 
+        return None
+
+    def visit_layer_declaration(self, layer_decl) -> None:
+        """Process layer declaration (doesn't produce SVG output)."""
+        # Could store layer info for ordering, but for now just acknowledge it
+        return None
+
+    def visit_layer_set(self, layer_set) -> None:
+        """Process layer ordering (doesn't produce SVG output)."""
+        # Could store layer ordering, but for now just acknowledge it
+        return None
+
+    def visit_layer(self, layer) -> str:
+        """Convert layer environment to SVG group."""
+        # For now, treat layers like scopes - just group the elements
+        # In a full implementation, we'd reorder elements based on layer ordering
+        elements = []
+        for stmt in layer.statements:
+            element = self.visit_statement(stmt)
+            if element:
+                elements.append(element)
+
+        if not elements:
+            return ""
+
+        content = "\n    ".join(elements)
+        return f'<g data-layer="{layer.name}">\n    {content}\n  </g>'
+
+    def visit_style_definition(self, style_def) -> None:
+        """Process style definition (doesn't produce SVG output)."""
+        # Could store styles for later reference, but for now just acknowledge it
         return None

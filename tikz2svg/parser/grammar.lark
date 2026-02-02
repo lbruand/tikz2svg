@@ -8,16 +8,22 @@ tikzpicture: "\\begin{tikzpicture}" tikz_options? statement* "\\end{tikzpicture}
 statement: draw_stmt
          | fill_stmt
          | filldraw_stmt
+         | clip_stmt
          | node_stmt
          | coordinate_stmt
          | scope
          | foreach_loop
          | macro_def
+         | layer_decl
+         | layer_set
+         | layer_env
+         | style_def
 
 // Draw commands
 draw_stmt: "\\draw" options? path ";"
 fill_stmt: "\\fill" options? path ";"
 filldraw_stmt: "\\filldraw" options? path ";"
+clip_stmt: "\\clip" options? path ";"
 
 // Path construction
 path: path_element (path_connector path_element)*
@@ -121,6 +127,22 @@ foreach_value: math_expr "/" math_expr    // Pair of values
 // Macro definitions
 macro_def: "\\def" "\\" CNAME "{" text "}"
          | "\\pgfmathsetmacro" "{" "\\" CNAME "}" "{" math_expr "}"
+
+// Layer management
+layer_decl: "\\pgfdeclarelayer" "{" CNAME "}"
+
+layer_set: "\\pgfsetlayers" "{" layer_list "}"
+
+layer_list: CNAME ("," CNAME)*
+
+layer_env: "\\begin{pgfonlayer}" "{" CNAME "}" statement* "\\end{pgfonlayer}"
+
+// Style definitions
+style_def: "\\tikzset" "{" style_assignment_list "}"
+
+style_assignment_list: style_assignment ("," style_assignment)*
+
+style_assignment: CNAME ("/" CNAME)* "/.style" "=" "{" option_list? "}"
 
 // Options
 tikz_options: "[" option_list "]"

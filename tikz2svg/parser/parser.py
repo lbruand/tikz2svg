@@ -71,6 +71,19 @@ class TikzTransformer(Transformer):
 
         return DrawStatement(command="filldraw", options=options, path=path or Path())
 
+    def clip_stmt(self, items):
+        """Transform clip statement."""
+        options = {}
+        path = None
+
+        for item in items:
+            if isinstance(item, dict):
+                options = item
+            elif isinstance(item, Path):
+                path = item
+
+        return DrawStatement(command="clip", options=options, path=path or Path())
+
     def path(self, items):
         """Transform path into segments."""
         segments = []
@@ -350,6 +363,75 @@ class TikzTransformer(Transformer):
                 statements.append(item)
 
         return Scope(options=options, statements=statements)
+
+    def layer_decl(self, items):
+        """Transform layer declaration."""
+        from lark import Token
+
+        name = str(items[0].value if isinstance(items[0], Token) else items[0])
+        return LayerDeclaration(name=name)
+
+    def layer_set(self, items):
+        """Transform layer set command."""
+        # items[0] is the layer_list
+        layers = items[0] if isinstance(items[0], list) else [items[0]]
+        return LayerSet(layers=layers)
+
+    def layer_list(self, items):
+        """Transform layer list."""
+        from lark import Token
+
+        return [str(item.value if isinstance(item, Token) else item) for item in items]
+
+    def layer_env(self, items):
+        """Transform pgfonlayer environment."""
+        from lark import Token
+
+        name = ""
+        statements = []
+
+        for item in items:
+            if isinstance(item, Token) and item.type == "CNAME":
+                name = str(item.value)
+            elif isinstance(item, str) and not name:
+                name = item
+            elif isinstance(item, ASTNode):
+                statements.append(item)
+
+        return Layer(name=name, statements=statements)
+
+    def style_def(self, items):
+        """Transform style definition (tikzset)."""
+        # items[0] should be style_assignment_list
+        styles = items[0] if isinstance(items[0], dict) else {}
+        return StyleDefinition(styles=styles)
+
+    def style_assignment_list(self, items):
+        """Transform list of style assignments."""
+        styles = {}
+        for item in items:
+            if isinstance(item, dict):
+                styles.update(item)
+        return styles
+
+    def style_assignment(self, items):
+        """Transform single style assignment."""
+        from lark import Token
+
+        # Build style name from CNAME parts
+        name_parts = []
+        options = {}
+
+        for item in items:
+            if isinstance(item, Token) and item.type == "CNAME":
+                name_parts.append(str(item.value))
+            elif isinstance(item, dict):
+                options = item
+
+        # Join name parts with / for hierarchical styles
+        style_name = "/".join(name_parts) if name_parts else "default"
+
+        return {style_name: options}
 
     def foreach_loop(self, items):
         """Transform foreach loop."""
