@@ -234,6 +234,35 @@ class SVGConverter:
                         path_data.append(f"L {x:.2f} {y:.2f}")
                         path_data.append(f"L {x1:.2f} {y:.2f}")
                         path_data.append("Z")
+                elif op == "grid":
+                    # Grid from current_pos to destination
+                    # Draw horizontal and vertical lines
+                    if current_pos:
+                        x1, y1 = current_pos
+                        x2, y2 = x, y
+
+                        # Default step is 1cm = 28.35pt in TikZ coordinates
+                        # In SVG space, that's scale * 28.35
+                        step = self.coord_transformer.scale * 28.35
+
+                        # Draw vertical lines
+                        x_start = min(x1, x2)
+                        x_end = max(x1, x2)
+                        y_start = min(y1, y2)
+                        y_end = max(y1, y2)
+
+                        current_x = x_start
+                        while current_x <= x_end + 0.01:
+                            path_data.append(f"M {current_x:.2f} {y_start:.2f}")
+                            path_data.append(f"L {current_x:.2f} {y_end:.2f}")
+                            current_x += step
+
+                        # Draw horizontal lines
+                        current_y = y_start
+                        while current_y <= y_end + 0.01:
+                            path_data.append(f"M {x_start:.2f} {current_y:.2f}")
+                            path_data.append(f"L {x_end:.2f} {current_y:.2f}")
+                            current_y += step
                 else:
                     # Default to line
                     path_data.append(f"L {x:.2f} {y:.2f}")

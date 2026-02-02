@@ -415,22 +415,32 @@ class TikzTransformer(Transformer):
                 styles.update(item)
         return styles
 
-    def style_assignment(self, items):
-        """Transform single style assignment."""
+    def style_path(self, items):
+        """Transform style path (name parts separated by /)."""
         from lark import Token
 
-        # Build style name from CNAME parts
         name_parts = []
-        options = {}
-
         for item in items:
             if isinstance(item, Token) and item.type == "CNAME":
                 name_parts.append(str(item.value))
-            elif isinstance(item, dict):
-                options = item
+            elif isinstance(item, str):
+                name_parts.append(item)
 
-        # Join name parts with / for hierarchical styles
-        style_name = "/".join(name_parts) if name_parts else "default"
+        return "/".join(name_parts) if name_parts else "default"
+
+    def style_assignment(self, items):
+        """Transform single style assignment."""
+        # items: [style_path, DOT_STYLE token, option_list]
+        style_name = "default"
+        options = {}
+
+        for item in items:
+            if isinstance(item, str):
+                # This is the style_path result
+                style_name = item
+            elif isinstance(item, dict):
+                # This is the option_list
+                options = item
 
         return {style_name: options}
 
@@ -635,9 +645,28 @@ class TikzTransformer(Transformer):
         return " ".join(str(item) for item in items)
 
     def key_value(self, items):
-        """Transform key-value pair."""
+        """Transform key-value pair, including style assignments."""
+        from lark import Token
+
         key = self._to_string(items[0])
-        value = items[1]
+
+        # Check if DOT_STYLE token is present
+        has_dot_style = any(
+            isinstance(item, Token) and item.type == "DOT_STYLE" for item in items
+        )
+
+        if has_dot_style:
+            # This is a style assignment: key/.style = value
+            # Value is the last item
+            value = items[-1]
+            # Wrap in a style assignment format
+            if isinstance(value, dict):
+                # Value is option list - this is a style definition
+                return (f"{key}/.style", value)
+        else:
+            # Regular key-value
+            value = items[1]
+
         return (key, value)
 
     def flag(self, items):
@@ -658,16 +687,31 @@ class TikzTransformer(Transformer):
         return str(item)
 
     def value(self, items):
-        """Extract value."""
+        """Extract value, optionally with unit."""
         if items:
+            # First item is the value
             item = items[0]
+            value_str = None
+
             if isinstance(item, (int, float)):
-                return item
+                value_str = str(item)
             elif isinstance(item, Token):
-                return str(item.value)
+                value_str = str(item.value)
             elif isinstance(item, str):
-                return item
-            return str(item)
+                value_str = item
+            else:
+                value_str = str(item)
+
+            # If there's a unit (second item), append it
+            if len(items) > 1:
+                unit = items[1]
+                if isinstance(unit, Token):
+                    unit = str(unit.value)
+                elif not isinstance(unit, str):
+                    unit = str(unit)
+                return value_str + unit
+
+            return value_str
         return None
 
     def color(self, items):

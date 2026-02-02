@@ -45,6 +45,7 @@ path_connector: "--"
               | "-|"
               | "to" options?
               | "rectangle"
+              | "grid"
 
 // Enhanced path operations
 controls_clause: "controls" coordinate ("and" coordinate)?
@@ -142,7 +143,9 @@ style_def: "\\tikzset" "{" style_assignment_list "}"
 
 style_assignment_list: style_assignment ("," style_assignment)*
 
-style_assignment: CNAME ("/" CNAME)* "/.style" "=" "{" option_list? "}"
+style_assignment: style_path DOT_STYLE "=" "{" option_list? "}"
+
+style_path: CNAME (CNAME | "/" CNAME)*
 
 // Options
 tikz_options: "[" option_list "]"
@@ -161,8 +164,8 @@ arrow_spec: "->"
           | "|->"
           | "<-|"
 
-key_value: multi_word_key "=" value
-         | CNAME "=" value
+key_value: multi_word_key DOT_STYLE? "=" value
+         | CNAME DOT_STYLE? "=" value
 
 multi_word_key: CNAME CNAME+
 
@@ -171,8 +174,8 @@ flag: COLOR_SPEC | CNAME
 ?value: quoted_string
       | "{" text "}"
       | COLOR_SPEC
-      | math_expr
-      | CNAME
+      | math_expr unit?
+      | CNAME unit?
 
 // Numbers and math expressions
 ?number: SIGNED_NUMBER
@@ -196,6 +199,7 @@ quoted_string: ESCAPED_STRING
 PLUSPLUS.10: "++"     // High priority - before SIGNED_NUMBER
 PLUS.9: "+"           // High priority - before SIGNED_NUMBER
 DOTDOTDOT.10: "..."  // High priority
+DOT_STYLE.10: "/.style"  // High priority - for style assignments
 CYCLE: "cycle"
 COLOR_SPEC: /[a-zA-Z]+(!([0-9]+|[a-zA-Z]+))+/
 CNAME: /[a-zA-Z_][a-zA-Z0-9_\-]*/
