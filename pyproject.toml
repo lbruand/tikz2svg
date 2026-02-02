@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Native Python TikZ to SVG converter using Lark parser"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "Lucas Bruand", email = "lucas.bruand@gmail.com"}
 ]

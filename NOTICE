@@ -1,7 +1,7 @@
-"""
-TikZ to SVG Converter - Native Python implementation.
-
+TikZ to SVG Converter
 Copyright 2026 Lucas Bruand
+
+This product includes software developed at https://github.com/lbruand/tikz2svg
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,14 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-A high-performance TikZ parser and SVG converter that replaces the pdflatex/pdf2svg
-pipeline with a pure Python solution using Lark parser and proper AST representation.
-"""
+This software uses the following third-party libraries:
 
-__version__ = "0.1.0"
-__author__ = "Lucas Bruand"
-
-from .parser.parser import TikzParser
-from .svg.converter import SVGConverter
-
-__all__ = ["TikzParser", "SVGConverter", "__version__"]
+- Lark (https://github.com/lark-parser/lark)
+  Licensed under the MIT License
