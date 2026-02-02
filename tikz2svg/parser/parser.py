@@ -651,9 +651,7 @@ class TikzTransformer(Transformer):
         key = self._to_string(items[0])
 
         # Check if DOT_STYLE token is present
-        has_dot_style = any(
-            isinstance(item, Token) and item.type == "DOT_STYLE" for item in items
-        )
+        has_dot_style = any(isinstance(item, Token) and item.type == "DOT_STYLE" for item in items)
 
         if has_dot_style:
             # This is a style assignment: key/.style = value
