@@ -161,14 +161,15 @@ class SVGConverter:
         """Convert scope to SVG group."""
         elements = [element for stmt in scope.statements if (element := self.visit_statement(stmt))]
 
-        if not elements:
-            return ""
+        if elements:
+            # Apply scope options to group
+            style = self.style_converter.convert(scope.options, "draw")
+            content = "\n    ".join(elements)
+            result = f'<g style="{style}">\n    {content}\n  </g>'
+        else:
+            result = ""
 
-        # Apply scope options to group
-        style = self.style_converter.convert(scope.options, "draw")
-        content = "\n    ".join(elements)
-
-        return f'<g style="{style}">\n    {content}\n  </g>'
+        return result
 
     def visit_foreach_loop(self, loop: ForeachLoop) -> str:
         """
