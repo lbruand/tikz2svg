@@ -76,12 +76,20 @@ class TikzTransformer(Transformer):
         current_operation = None
         start_coord = None
 
-        # Debug: print items
-        # print(f"DEBUG path items: {items}")
+        # Check for inline foreach and expand if present
+        expanded_items = []
+        for item in items:
+            if isinstance(item, dict) and item.get("_type") == "inline_foreach":
+                # Expand the inline foreach loop
+                expanded = self._expand_inline_foreach(item)
+                expanded_items.extend(expanded)
+            else:
+                expanded_items.append(item)
 
+        # Process expanded items
         i = 0
-        while i < len(items):
-            item = items[i]
+        while i < len(expanded_items):
+            item = expanded_items[i]
 
             # Handle coordinate with modifier (e.g., (0,0) circle (1))
             if isinstance(item, dict) and "coord" in item:
@@ -127,6 +135,110 @@ class TikzTransformer(Transformer):
             i += 1
 
         return Path(segments=segments)
+
+    def _expand_inline_foreach(self, foreach_dict):
+        """Expand inline foreach loop into path elements.
+
+        Args:
+            foreach_dict: Dict with foreach loop information
+
+        Returns:
+            List of expanded path elements (connectors and coordinates)
+        """
+        variables = foreach_dict["variables"]
+        values = foreach_dict["values"]
+        path_segments = foreach_dict["path_segments"]
+        evaluate_clause = foreach_dict.get("evaluate_clause")
+
+        expanded = []
+
+        # For each value in the loop
+        for value in values:
+            # Create a temporary context for variable substitution
+            var_map = {}
+            if len(variables) == 1:
+                var_map[variables[0]] = value
+            elif len(variables) > 1 and isinstance(value, (tuple, list)):
+                for i, var in enumerate(variables):
+                    if i < len(value):
+                        var_map[var] = value[i]
+
+            # Handle evaluate clause if present
+            if evaluate_clause:
+                # For now, skip evaluate clause in inline foreach
+                # (would require math evaluation during parsing)
+                pass
+
+            # Expand each path segment with variable substitution
+            for seg in path_segments:
+                connector = seg["connector"]
+                element = seg["element"]
+
+                # Substitute variables in the element
+                substituted_element = self._substitute_vars_in_coord(element, var_map)
+
+                expanded.append(connector)
+                expanded.append(substituted_element)
+
+        return expanded
+
+    def _substitute_vars_in_coord(self, element, var_map):
+        """Substitute variables in a coordinate element.
+
+        Args:
+            element: Coordinate or dict with coordinate info
+            var_map: Dict mapping variable names to values
+
+        Returns:
+            New coordinate with variables substituted
+        """
+        if isinstance(element, Coordinate):
+            # Create a copy with substituted values
+            new_values = []
+            for val in element.values:
+                if isinstance(val, str):
+                    # Try to substitute variables in the string
+                    substituted = self._substitute_vars_in_expr(val, var_map)
+                    new_values.append(substituted)
+                else:
+                    new_values.append(val)
+
+            return Coordinate(
+                system=element.system,
+                values=new_values,
+                name=element.name,
+                modifiers=element.modifiers,
+            )
+        elif isinstance(element, dict) and "coord" in element:
+            # Handle dict format
+            coord = element["coord"]
+            new_coord = self._substitute_vars_in_coord(coord, var_map)
+            return {"coord": new_coord, "modifier": element.get("modifier")}
+        else:
+            return element
+
+    def _substitute_vars_in_expr(self, expr_str, var_map):
+        """Substitute variables in an expression string.
+
+        Args:
+            expr_str: Expression string like "\\i*0.5"
+            var_map: Dict mapping variable names to values
+
+        Returns:
+            Expression string with variables substituted
+        """
+        import re
+
+        def replace_var(match):
+            var_name = match.group(1)
+            if var_name in var_map:
+                value = var_map[var_name]
+                return str(value)
+            return match.group(0)
+
+        # Replace variable references like \i, \x, etc.
+        result = re.sub(r"\\([a-zA-Z][a-zA-Z0-9]*)", replace_var, expr_str)
+        return result
 
     def path_element(self, items):
         """Transform path element."""
@@ -235,6 +347,59 @@ class TikzTransformer(Transformer):
             if isinstance(item, Coordinate):
                 controls.append(item)
         return {"_type": "controls", "points": controls}
+
+    def inline_foreach_path(self, items):
+        """Transform inline foreach within path.
+
+        Returns a dict with foreach loop information that will be expanded
+        during path construction.
+        """
+        variables = []
+        values = []
+        path_segments = []
+        options = {}
+        seen_list = False
+
+        for item in items:
+            if isinstance(item, list) and len(item) > 0:
+                # First list is variables, second is values
+                if not seen_list:
+                    variables = item
+                    seen_list = True
+                else:
+                    values = item
+            elif isinstance(item, dict):
+                if "evaluate" in item:
+                    options = item
+                elif "_type" in item and item["_type"] == "path_segments":
+                    path_segments = item["segments"]
+
+        evaluate_clause = options.get("evaluate") if options else None
+
+        return {
+            "_type": "inline_foreach",
+            "variables": variables,
+            "values": values,
+            "path_segments": path_segments,
+            "evaluate_clause": evaluate_clause,
+        }
+
+    def path_segments(self, items):
+        """Transform path segments (connector + element pairs)."""
+        segments = []
+        current_connector = None
+
+        for item in items:
+            if isinstance(item, str):
+                # Path connector
+                current_connector = item
+            elif isinstance(item, Coordinate) or (isinstance(item, dict) and "coord" in item):
+                # Path element - pair with connector
+                if current_connector:
+                    segments.append({"connector": current_connector, "element": item})
+                    current_connector = None
+
+        return {"_type": "path_segments", "segments": segments}
 
     def relative_coordinate(self, items):
         """Transform relative coordinate (++ or +)."""

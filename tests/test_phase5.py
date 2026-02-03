@@ -278,9 +278,6 @@ class TestIntegration:
 
         assert "<svg" in svg
 
-    @pytest.mark.skip(
-        reason="Inline foreach within paths not supported: requires foreach as path element, not statement"
-    )
     def test_relative_with_foreach(self, parser, converter):
         """Test relative coordinates in loops."""
         tikz = r"""

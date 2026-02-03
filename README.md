@@ -107,6 +107,7 @@ with open("output.svg", "w") as f:
 - **Multiple variables**: `\foreach \x/\y in {0/1, 1/2} { ... }`
 - **Evaluate clause**: `\foreach \i [evaluate=\i as \x using \i*2] in {0,...,5} { ... }`
 - **Nested loops**: Full support for deeply nested loops
+- **Inline foreach in paths**: `\draw (0,0) \foreach \i in {1,...,4} { -- ++(\i,0) };`
 
 ### Scopes & Organization
 - `\begin{scope}[options] ... \end{scope}` - Option inheritance
@@ -233,14 +234,13 @@ pytest tests/test_parser.py -v
 ### Test Results
 
 ```
-268 tests total
-267 passed (99.6%)
-1 skipped (documented edge case)
+308 tests total
+308 passed (100%)
+0 skipped
 Coverage: 96%+
 ```
 
-**Skipped test** (advanced feature requiring architectural changes):
-- Inline foreach within paths: `\draw (0,0) \foreach \i in {...} { -- ... };`
+All tests passing! ✅
 
 ## Performance Benchmark
 
@@ -254,10 +254,6 @@ Coverage: 96%+
 ## Known Limitations
 
 While tikz2svg supports the most commonly used TikZ features (covering ~95% of real-world usage), some advanced features are not yet implemented:
-
-**Documented Edge Case:**
-- Inline `\foreach` within paths: `\draw (0,0) \foreach \i {...} { -- ... };`
-  (requires foreach as a path element, not just a statement)
 
 **Advanced TikZ Features Not Supported:**
 - Complex TeX conditionals (`\ifthenelse`, `\ifnum`)

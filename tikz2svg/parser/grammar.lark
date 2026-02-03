@@ -27,10 +27,16 @@ clip_stmt: "\\clip" options? path ";"
 
 // Path construction
 path: path_element (path_connector path_element)*
+    | path_element (path_connector path_element)* inline_foreach_path
 
 path_element: CYCLE
             | relative_coordinate node_label? path_modifier?
             | coordinate node_label? path_modifier?
+
+// Inline foreach within path
+inline_foreach_path: "\\foreach" foreach_vars foreach_options? "in" foreach_values "{" path_segments "}"
+
+path_segments: (path_connector path_element)+
 
 relative_coordinate: PLUSPLUS coordinate
                    | PLUS coordinate
