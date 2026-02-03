@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 from ..evaluator.context import EvaluationContext
 from ..evaluator.math_eval import MathEvaluator
 from ..parser.ast_nodes import *
+from .coordinate_resolver import CoordinateResolver
 from .geometry import CoordinateTransformer
 from .styles import StyleConverter
 
@@ -26,11 +27,16 @@ class SVGConverter:
         self.height = height
         self.coord_transformer = CoordinateTransformer(scale, width // 2, height // 2)
         self.style_converter = StyleConverter()
-        self.named_coordinates: Dict[str, Tuple[float, float]] = {}
 
         # Math evaluation
         self.context = EvaluationContext()
         self.evaluator = MathEvaluator(self.context)
+
+        # Coordinate resolution
+        self.named_coordinates: Dict[str, Tuple[float, float]] = {}
+        self.coord_resolver = CoordinateResolver(
+            self.coord_transformer, self.evaluator, self.named_coordinates
+        )
 
     def _safe_evaluate(self, value, evaluator: Optional[MathEvaluator] = None):
         """Safely evaluate a value with fallback.
@@ -171,14 +177,14 @@ class SVGConverter:
                     circle_spec = op.get("spec", {})
                     if current_pos and segment.destination:
                         # Circle at specific coordinate
-                        center = self.evaluate_coordinate(segment.destination, current_pos)
+                        center = self.coord_resolver.resolve(segment.destination, current_pos)
                     elif current_pos:
                         center = current_pos
                     else:
                         center = self.coord_transformer.tikz_to_svg(0, 0)
 
                     radius = (
-                        self._eval_value(circle_spec.get("radius", 1.0))
+                        self.coord_resolver.eval_value(circle_spec.get("radius", 1.0))
                         * self.coord_transformer.scale
                     )
                     # Draw circle as path (M, A, A, Z)
@@ -191,19 +197,19 @@ class SVGConverter:
                 elif op_type == "controls":
                     # Bezier curve with explicit control points
                     if segment.destination and current_pos:
-                        dest = self.evaluate_coordinate(segment.destination, current_pos)
+                        dest = self.coord_resolver.resolve(segment.destination, current_pos)
                         controls = op.get("points", [])
                         if len(controls) == 2:
                             # Cubic Bezier
-                            c1 = self.evaluate_coordinate(controls[0], current_pos)
-                            c2 = self.evaluate_coordinate(controls[1], current_pos)
+                            c1 = self.coord_resolver.resolve(controls[0], current_pos)
+                            c2 = self.coord_resolver.resolve(controls[1], current_pos)
                             path_data.append(
                                 f"C {c1[0]:.2f} {c1[1]:.2f} {c2[0]:.2f} {c2[1]:.2f} {dest[0]:.2f} {dest[1]:.2f}"
                             )
                             current_pos = dest
                         elif len(controls) == 1:
                             # Quadratic Bezier
-                            c1 = self.evaluate_coordinate(controls[0], current_pos)
+                            c1 = self.coord_resolver.resolve(controls[0], current_pos)
                             path_data.append(
                                 f"Q {c1[0]:.2f} {c1[1]:.2f} {dest[0]:.2f} {dest[1]:.2f}"
                             )
@@ -211,7 +217,7 @@ class SVGConverter:
 
             elif segment.destination:
                 # Handle standard operations with destination
-                coord = self.evaluate_coordinate(segment.destination, current_pos)
+                coord = self.coord_resolver.resolve(segment.destination, current_pos)
                 x, y = coord
 
                 if op == "start":
@@ -309,9 +315,12 @@ class SVGConverter:
 
         if format_type == "angles":
             # (start:end:radius) format
-            start_angle = self._eval_value(arc_spec.get("start_angle", 0))
-            end_angle = self._eval_value(arc_spec.get("end_angle", 90))
-            radius = self._eval_value(arc_spec.get("radius", 1.0)) * self.coord_transformer.scale
+            start_angle = self.coord_resolver.eval_value(arc_spec.get("start_angle", 0))
+            end_angle = self.coord_resolver.eval_value(arc_spec.get("end_angle", 90))
+            radius = (
+                self.coord_resolver.eval_value(arc_spec.get("radius", 1.0))
+                * self.coord_transformer.scale
+            )
 
             # Calculate end point
             import math
@@ -335,9 +344,12 @@ class SVGConverter:
 
         else:
             # Options format [start angle=..., end angle=..., radius=...]
-            start_angle = self._eval_value(arc_spec.get("start_angle", 0))
-            end_angle = self._eval_value(arc_spec.get("end_angle", 90))
-            radius = self._eval_value(arc_spec.get("radius", 1.0)) * self.coord_transformer.scale
+            start_angle = self.coord_resolver.eval_value(arc_spec.get("start_angle", 0))
+            end_angle = self.coord_resolver.eval_value(arc_spec.get("end_angle", 90))
+            radius = (
+                self.coord_resolver.eval_value(arc_spec.get("radius", 1.0))
+                * self.coord_transformer.scale
+            )
 
             # Similar calculation as above
             import math
@@ -350,87 +362,6 @@ class SVGConverter:
             sweep = 1
 
             return f"A {radius:.2f} {radius:.2f} 0 {large_arc} {sweep} {end_x:.2f} {end_y:.2f}"
-
-    def evaluate_coordinate(
-        self, coord: Coordinate, current_pos: Optional[Tuple[float, float]] = None
-    ) -> Tuple[float, float]:
-        """Evaluate a coordinate to (x, y) in SVG space."""
-        if coord.system == "cartesian":
-            # Evaluate expressions if needed
-            x = self._eval_value(coord.values[0])
-            y = self._eval_value(coord.values[1])
-            return self.coord_transformer.tikz_to_svg(x, y)
-
-        elif coord.system == "polar":
-            # Evaluate expressions if needed
-            angle = self._eval_value(coord.values[0])
-            radius = self._eval_value(coord.values[1])
-            x, y = self.coord_transformer.polar_to_cartesian(angle, radius)
-            return self.coord_transformer.tikz_to_svg(x, y)
-
-        elif coord.system == "named":
-            if coord.name in self.named_coordinates:
-                return self.named_coordinates[coord.name]
-            else:
-                # Unknown coordinate, return origin
-                return self.coord_transformer.tikz_to_svg(0, 0)
-
-        elif coord.system == "relative":
-            # Relative to current position
-            if current_pos:
-                # Check the inner coordinate system
-                inner_system = coord.modifiers.get("inner_system", "cartesian")
-
-                if inner_system == "cartesian" and len(coord.values) >= 2:
-                    dx = self._eval_value(coord.values[0])
-                    dy = self._eval_value(coord.values[1])
-                elif inner_system == "polar" and len(coord.values) >= 2:
-                    # Convert polar to cartesian delta
-                    angle = self._eval_value(coord.values[0])
-                    radius = self._eval_value(coord.values[1])
-                    dx, dy = self.coord_transformer.polar_to_cartesian(angle, radius)
-                else:
-                    dx, dy = 0, 0
-
-                # Convert delta to SVG space
-                dx_svg = dx * self.coord_transformer.scale
-                dy_svg = -dy * self.coord_transformer.scale  # Flip Y
-                return (current_pos[0] + dx_svg, current_pos[1] + dy_svg)
-            else:
-                # No current position, treat as absolute
-                if len(coord.values) >= 2:
-                    x = self._eval_value(coord.values[0])
-                    y = self._eval_value(coord.values[1])
-                    return self.coord_transformer.tikz_to_svg(x, y)
-                return self.coord_transformer.tikz_to_svg(0, 0)
-
-        # Default
-        return self.coord_transformer.tikz_to_svg(0, 0)
-
-    def _eval_value(self, value: Any) -> float:
-        """
-        Evaluate a value (may be number or expression string).
-
-        Args:
-            value: Value to evaluate
-
-        Returns:
-            Float value
-        """
-        if isinstance(value, (int, float)):
-            return float(value)
-
-        if isinstance(value, str):
-            try:
-                return self.evaluator.evaluate(value)
-            except Exception:
-                # If evaluation fails, try direct conversion
-                try:
-                    return float(value)
-                except ValueError:
-                    return 0.0
-
-        return 0.0
 
     def _evaluate_options(self, options: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -482,7 +413,7 @@ class SVGConverter:
     def visit_node(self, node: Node) -> str:
         """Convert node to SVG text element."""
         if node.position:
-            x, y = self.evaluate_coordinate(node.position)
+            x, y = self.coord_resolver.resolve(node.position)
         else:
             x, y = self.coord_transformer.tikz_to_svg(0, 0)
 
@@ -498,7 +429,7 @@ class SVGConverter:
     def visit_coordinate_definition(self, coord_def: CoordinateDefinition) -> None:
         """Store named coordinate (doesn't produce SVG output)."""
         if coord_def.position:
-            pos = self.evaluate_coordinate(coord_def.position)
+            pos = self.coord_resolver.resolve(coord_def.position)
             self.named_coordinates[coord_def.name] = pos
         return None
 
