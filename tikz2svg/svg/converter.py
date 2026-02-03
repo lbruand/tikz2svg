@@ -155,10 +155,9 @@ class SVGConverter:
 
             if op == "cycle":
                 path_data.append("Z")
-                continue
 
-            # Handle dict-based operations (arc, circle)
-            if isinstance(op, dict):
+            elif isinstance(op, dict):
+                # Handle dict-based operations (arc, circle, controls)
                 op_type = op.get("_type")
 
                 if op_type == "arc":
@@ -166,7 +165,6 @@ class SVGConverter:
                     if arc_cmd:
                         path_data.append(arc_cmd)
                         # Update current_pos based on arc end point
-                    continue
 
                 elif op_type == "circle":
                     # Circle at current position
@@ -189,7 +187,6 @@ class SVGConverter:
                     path_data.append(f"A {radius:.2f} {radius:.2f} 0 1 0 {cx + radius:.2f} {cy}")
                     path_data.append(f"A {radius:.2f} {radius:.2f} 0 1 0 {cx - radius:.2f} {cy}")
                     current_pos = center
-                    continue
 
                 elif op_type == "controls":
                     # Bezier curve with explicit control points
@@ -211,10 +208,9 @@ class SVGConverter:
                                 f"Q {c1[0]:.2f} {c1[1]:.2f} {dest[0]:.2f} {dest[1]:.2f}"
                             )
                             current_pos = dest
-                    continue
 
-            # Handle standard operations with destination
-            if segment.destination:
+            elif segment.destination:
+                # Handle standard operations with destination
                 coord = self.evaluate_coordinate(segment.destination, current_pos)
                 x, y = coord
 
@@ -454,6 +450,8 @@ class SVGConverter:
             if isinstance(value, Token):
                 value = str(value.value)
 
+            eval_succeeded = False
+
             # Try to evaluate if it looks like an expression
             if isinstance(value, str):
                 # Check if it's a variable reference (single word that might be a variable)
@@ -461,20 +459,23 @@ class SVGConverter:
                     # Try as variable first
                     try:
                         evaluated[key] = self.evaluator.evaluate(f"\\{value}")
-                        continue
+                        eval_succeeded = True
                     except Exception:
                         pass
 
-                # Try to evaluate if it has operators or backslash
-                if "\\" in value or any(op in value for op in ["+", "-", "*", "/", "("]):
+                # Try to evaluate if it has operators or backslash (only if not already evaluated)
+                if not eval_succeeded and (
+                    "\\" in value or any(op in value for op in ["+", "-", "*", "/", "("])
+                ):
                     try:
                         evaluated[key] = self.evaluator.evaluate(value)
-                        continue
+                        eval_succeeded = True
                     except Exception:
                         pass
 
             # Keep as-is if no evaluation succeeded
-            evaluated[key] = value
+            if not eval_succeeded:
+                evaluated[key] = value
 
         return evaluated
 
