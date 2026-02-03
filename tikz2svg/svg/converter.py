@@ -220,10 +220,9 @@ class SVGConverter:
                         pass
 
                 # Visit body statements
-                for stmt in loop.body:
-                    element = self.visit_statement(stmt)
-                    if element:
-                        elements.append(element)
+                elements.extend(
+                    element for stmt in loop.body if (element := self.visit_statement(stmt))
+                )
 
             finally:
                 # Restore parent context
