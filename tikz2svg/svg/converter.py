@@ -269,11 +269,13 @@ class SVGConverter:
         # In a full implementation, we'd reorder elements based on layer ordering
         elements = [element for stmt in layer.statements if (element := self.visit_statement(stmt))]
 
-        if not elements:
-            return ""
+        if elements:
+            content = "\n    ".join(elements)
+            result = f'<g data-layer="{layer.name}">\n    {content}\n  </g>'
+        else:
+            result = ""
 
-        content = "\n    ".join(elements)
-        return f'<g data-layer="{layer.name}">\n    {content}\n  </g>'
+        return result
 
     def visit_style_definition(self, style_def) -> None:
         """Process style definition (doesn't produce SVG output)."""

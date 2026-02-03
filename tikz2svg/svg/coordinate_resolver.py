@@ -90,10 +90,12 @@ class CoordinateResolver:
             SVG (x, y) position, or origin if not found
         """
         name = coord.name
-        if name and name in self.named_coordinates:
-            return self.named_coordinates[name]
-        # Default to origin if not found
-        return self.coord_transformer.tikz_to_svg(0, 0)
+        result = (
+            self.named_coordinates[name]
+            if name and name in self.named_coordinates
+            else self.coord_transformer.tikz_to_svg(0, 0)
+        )
+        return result
 
     def _resolve_relative(
         self, coord: Coordinate, current_pos: Optional[Tuple[float, float]]
