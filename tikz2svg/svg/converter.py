@@ -291,6 +291,7 @@ class SVGConverter:
                 # The math SVG has its own viewBox, so we need to translate based on anchor
                 # Extract width and height from the math SVG to calculate anchor offset
                 import re
+
                 width_match = re.search(r'width="([\d.]+)"', math_svg)
                 height_match = re.search(r'height="([\d.]+)"', math_svg)
 

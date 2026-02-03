@@ -100,7 +100,9 @@ class StyleConverter:
             fill_opacity = options["fill opacity"]
             # Handle both numeric and string values
             try:
-                fill_opacity_val = float(fill_opacity) if isinstance(fill_opacity, str) else fill_opacity
+                fill_opacity_val = (
+                    float(fill_opacity) if isinstance(fill_opacity, str) else fill_opacity
+                )
                 styles.append(f"fill-opacity: {fill_opacity_val}")
             except (ValueError, TypeError):
                 pass

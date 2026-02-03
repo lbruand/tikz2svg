@@ -74,7 +74,7 @@ class TestTextColorInheritance:
         svg = converter.convert(ast)
 
         # Text should have red color
-        assert 'fill: #FF0000' in svg or 'fill: red' in svg.lower()
+        assert "fill: #FF0000" in svg or "fill: red" in svg.lower()
 
     def test_inline_node_inherits_blue(self):
         """Test inline node inherits blue color from draw statement."""
@@ -85,7 +85,7 @@ class TestTextColorInheritance:
         svg = converter.convert(ast)
 
         # Text should have blue color
-        assert 'fill: #0000FF' in svg or 'fill: blue' in svg.lower()
+        assert "fill: #0000FF" in svg or "fill: blue" in svg.lower()
 
     def test_inline_node_override_color(self):
         """Test inline node color override (currently inherits parent - known limitation)."""
@@ -98,7 +98,7 @@ class TestTextColorInheritance:
         # Currently node inherits parent color when both are specified
         # TODO: Implement proper color override (node color should take precedence)
         # For now, test that it has *a* color (currently red from parent)
-        assert 'fill: #FF0000' in svg or 'fill: #0000FF' in svg
+        assert "fill: #FF0000" in svg or "fill: #0000FF" in svg
 
     def test_standalone_node_no_inheritance(self):
         """Test standalone node doesn't inherit from previous draw."""
@@ -115,8 +115,8 @@ class TestTextColorInheritance:
 
         # Standalone node should have default black color
         # (Check that not all text is red)
-        text_elements = svg.count('<text')
-        red_text = svg.count('fill: #FF0000')
+        text_elements = svg.count("<text")
+        red_text = svg.count("fill: #FF0000")
         assert text_elements > red_text  # At least one text is not red
 
 
@@ -132,7 +132,7 @@ class TestMathScaling:
         converter = SVGConverter()
         svg = converter.convert(ast)
 
-        assert 'scale(0.45)' in svg
+        assert "scale(0.45)" in svg
 
     def test_math_without_text(self):
         """Test pure math node renders with scaling."""
@@ -142,7 +142,7 @@ class TestMathScaling:
         converter = SVGConverter()
         svg = converter.convert(ast)
 
-        assert 'scale(0.45)' in svg
+        assert "scale(0.45)" in svg
         assert '<g transform="translate' in svg
 
 
@@ -160,7 +160,7 @@ class TestMathAnchoring:
 
         # Math should be in a group with translate and scale
         assert '<g transform="translate' in svg
-        assert 'scale(0.45)' in svg
+        assert "scale(0.45)" in svg
 
     def test_math_anchor_left(self):
         """Test math with node[left] is positioned correctly."""
@@ -172,7 +172,7 @@ class TestMathAnchoring:
 
         # Math should be in a group with translate and scale
         assert '<g transform="translate' in svg
-        assert 'scale(0.45)' in svg
+        assert "scale(0.45)" in svg
 
     def test_inline_math_in_path(self):
         """Test inline math node in path."""
@@ -185,7 +185,7 @@ class TestMathAnchoring:
         # Should have both path and math
         assert '<path d="' in svg
         assert '<g transform="translate' in svg
-        assert 'scale(0.45)' in svg
+        assert "scale(0.45)" in svg
 
 
 class TestTextSize:
@@ -199,7 +199,7 @@ class TestTextSize:
         converter = SVGConverter()
         svg = converter.convert(ast)
 
-        assert 'font-size: 10px' in svg
+        assert "font-size: 10px" in svg
 
     def test_text_size_not_12px(self):
         """Test text size is not the old default of 12px."""
@@ -210,7 +210,7 @@ class TestTextSize:
         svg = converter.convert(ast)
 
         # Should not have old 12px default
-        assert 'font-size: 12px' not in svg
+        assert "font-size: 12px" not in svg
 
 
 class TestTextAndMathIntegration:
@@ -230,15 +230,17 @@ class TestTextAndMathIntegration:
         svg = converter.convert(ast)
 
         # Should have text elements
-        assert '<text' in svg
+        assert "<text" in svg
         # Should have red and blue colors
-        assert '#FF0000' in svg or 'red' in svg.lower()
-        assert '#0000FF' in svg or 'blue' in svg.lower()
+        assert "#FF0000" in svg or "red" in svg.lower()
+        assert "#0000FF" in svg or "blue" in svg.lower()
 
     @pytest.mark.skipif(not ZIAMATH_AVAILABLE, reason="ziamath not available")
     def test_colored_math(self):
         """Test math inherits color from parent draw."""
-        tikz = r"\begin{tikzpicture}\draw[red] (0,0) -- (1,1) node[right] {$f(x)$};\end{tikzpicture}"
+        tikz = (
+            r"\begin{tikzpicture}\draw[red] (0,0) -- (1,1) node[right] {$f(x)$};\end{tikzpicture}"
+        )
         parser = TikzParser()
         ast = parser.parse(tikz)
         converter = SVGConverter()
@@ -248,4 +250,4 @@ class TestTextAndMathIntegration:
         assert '<path d="' in svg
         assert '<g transform="translate' in svg
         # Path should be red
-        assert 'stroke: #FF0000' in svg or 'stroke: red' in svg.lower()
+        assert "stroke: #FF0000" in svg or "stroke: red" in svg.lower()
