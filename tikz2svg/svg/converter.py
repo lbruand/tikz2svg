@@ -7,6 +7,7 @@ from ..evaluator.math_eval import MathEvaluator
 from ..parser.ast_nodes import *
 from .coordinate_resolver import CoordinateResolver
 from .geometry import CoordinateTransformer
+from .loop_expander import ForeachLoopExpander
 from .option_processor import OptionProcessor
 from .path_renderer import PathRenderer
 from .styles import StyleConverter
@@ -45,6 +46,9 @@ class SVGConverter:
 
         # Path rendering
         self.path_renderer = PathRenderer(self.coord_resolver, self.coord_transformer)
+
+        # Loop expansion
+        self.loop_expander = ForeachLoopExpander(self.option_processor)
 
     def convert(self, ast: TikzPicture) -> str:
         """Convert TikZ AST to SVG string."""
@@ -181,55 +185,7 @@ class SVGConverter:
         - Evaluate clause for computed variables
         - Nested loops with proper scoping
         """
-        elements = []
-
-        # Prepare loop values
-        num_vars = len(loop.variables)
-
-        for value in loop.values:
-            # Create child context for this iteration
-            parent_context = self.context
-            parent_evaluator = self.evaluator
-            self.context = self.context.create_child_context()
-            self.evaluator = MathEvaluator(self.context)
-
-            try:
-                # Set loop variable(s)
-                if num_vars == 1:
-                    # Single variable
-                    var_name = loop.variables[0]
-                    value_eval = self.option_processor.safe_evaluate(value, parent_evaluator)
-                    self.context.set_variable(var_name, value_eval)
-                elif num_vars > 1 and isinstance(value, (tuple, list)):
-                    # Multiple variables with paired values
-                    for i, var_name in enumerate(loop.variables):
-                        if i < len(value):
-                            val = self.option_processor.safe_evaluate(value[i], parent_evaluator)
-                            self.context.set_variable(var_name, val)
-
-                # Handle evaluate clause
-                if loop.evaluate_clause:
-                    eval_info = loop.evaluate_clause
-                    target_var = eval_info["target"]
-                    expression = eval_info["expression"]
-
-                    # Evaluate the expression with current loop variable value
-                    try:
-                        result = self.evaluator.evaluate(expression)
-                        self.context.set_variable(target_var, result)
-                    except Exception:
-                        pass
-
-                # Visit body statements
-                elements.extend(
-                    element for stmt in loop.body if (element := self.visit_statement(stmt))
-                )
-
-            finally:
-                # Restore parent context
-                self.context = parent_context
-                self.evaluator = parent_evaluator
-
+        elements = self.loop_expander.expand(loop, self)
         return "\n  ".join(elements)
 
     def visit_macro_definition(self, macro: MacroDefinition) -> None:
