@@ -2,7 +2,7 @@
 
 import pytest
 
-from tikz2svg.svg.math_renderer import MathRenderer, ZIAMATH_AVAILABLE
+from tikz2svg.svg.math_renderer import ZIAMATH_AVAILABLE, MathRenderer
 
 
 class TestMathRendererAvailability:
