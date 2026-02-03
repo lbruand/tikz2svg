@@ -5,7 +5,6 @@ Downloads TikZ code and metadata from the gallery
 """
 
 import json
-import os
 import re
 import time
 from pathlib import Path
@@ -147,7 +146,7 @@ class TikZScraper:
         metadata = self.extract_metadata(soup, url)
 
         if not code:
-            print(f"  Warning: No TikZ code found")
+            print("  Warning: No TikZ code found")
             return False
 
         # Create filename
@@ -169,7 +168,7 @@ class TikZScraper:
 
     def scrape(self, max_pages=None, max_examples=None):
         """Main scraping function"""
-        print(f"Starting TikZ gallery scraper")
+        print("Starting TikZ gallery scraper")
         print(f"Output directory: {self.output_dir.absolute()}\n")
 
         # Get all example links

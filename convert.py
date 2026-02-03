@@ -3,7 +3,6 @@
 Convert TikZ LaTeX files to SVG using pdflatex and pdf2svg
 """
 
-import os
 import shutil
 import subprocess
 import sys
@@ -60,7 +59,7 @@ def convert_tex_to_svg(input_path, output_path):
             sys.exit(1)
 
         # Convert PDF to SVG
-        print(f"Converting PDF to SVG...")
+        print("Converting PDF to SVG...")
         result = subprocess.run(
             ["pdf2svg", str(pdf_file), str(output_path)], capture_output=True, text=True
         )

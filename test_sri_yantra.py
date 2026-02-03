@@ -38,7 +38,7 @@ print("Attempting to parse...")
 print("-" * 80)
 try:
     ast = parser.parse(tikz_code)
-    print(f"✓ Parsing successful!")
+    print("✓ Parsing successful!")
     print(f"  - AST type: {type(ast).__name__}")
     print(f"  - Number of statements: {len(ast.statements)}")
     print()
@@ -58,7 +58,7 @@ try:
     converter = SVGConverter()
     print("Converting to SVG...")
     svg = converter.convert(ast)
-    print(f"✓ Conversion successful!")
+    print("✓ Conversion successful!")
     print(f"  - SVG length: {len(svg)} characters")
     print()
 
@@ -68,7 +68,7 @@ try:
     group_count = svg.count("<g")
     circle_count = svg.count("circle")
 
-    print(f"SVG Analysis:")
+    print("SVG Analysis:")
     print(f"  - Path elements: {path_count}")
     print(f"  - Text elements: {text_count}")
     print(f"  - Group elements: {group_count}")
