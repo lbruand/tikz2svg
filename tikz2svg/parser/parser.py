@@ -956,10 +956,21 @@ class TikzTransformer(Transformer):
             return float(items[0])
         return 0.0
 
+    def math_op(self, items):
+        """Transform math operator to string."""
+        if not items:
+            return ""
+        if isinstance(items[0], Token):
+            return items[0].value
+        return str(items[0])
+
     def math_expr(self, items):
         """Transform math expression into string representation."""
         if not items:
             return "0"
+
+        # Debug: uncomment to see what items we're getting
+        # print(f"DEBUG math_expr items: {items}, types: {[type(i) for i in items]}")
 
         if len(items) == 1:
             item = items[0]
@@ -977,10 +988,11 @@ class TikzTransformer(Transformer):
             return f"\\{items[1].value}"
 
         # Multiple items - reconstruct expression
-        # Format: expr operator expr, or function(expr), or (expr)
+        # Format: expr MATH_OP expr, or function(expr), or (expr)
         result = ""
         for item in items:
             if isinstance(item, Token):
+                # Handle MATH_OP and other tokens
                 result += str(item.value)
             else:
                 result += str(item)

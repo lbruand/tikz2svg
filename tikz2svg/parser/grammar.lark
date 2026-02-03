@@ -193,13 +193,13 @@ flag: COLOR_SPEC | CNAME
 
 ?math_expr: SIGNED_NUMBER
           | "\\" CNAME  // Variable reference
-          | math_expr operator math_expr
+          | math_expr math_op math_expr
           | math_function "(" math_expr ")"
           | "(" math_expr ")"
 
 math_function: "sin" | "cos" | "tan" | "sqrt" | "abs" | "exp" | "ln" | "log"
 
-operator: "+" | "-" | "*" | "/" | "^"
+math_op: PLUS | "-" | "*" | "/" | "^"
 
 // Text content - can include nested braces for LaTeX commands
 text: text_parts
