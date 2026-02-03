@@ -96,11 +96,14 @@ class TikzTransformer(Transformer):
                 coord = item["coord"]
                 modifier = item.get("modifier")
                 coord_label = item.get("coord_label")
+                node_label = item.get("node_label")
 
-                # Create segment options if there's a coordinate label
+                # Create segment options if there's a coordinate label or node label
                 seg_options = {}
                 if coord_label:
                     seg_options["coordinate_name"] = coord_label.get("name")
+                if node_label:
+                    seg_options["node_label"] = node_label
 
                 if current_coord is None:
                     # First coordinate
@@ -110,9 +113,11 @@ class TikzTransformer(Transformer):
                     )
                 else:
                     # Connected coordinate
+                    # Use "move" operation if no connector was specified (for placing nodes)
+                    operation = current_operation if current_operation is not None else "move"
                     segments.append(
                         PathSegment(
-                            operation=current_operation or "--",
+                            operation=operation,
                             destination=coord,
                             options=seg_options,
                         )
@@ -133,9 +138,9 @@ class TikzTransformer(Transformer):
                     segments.append(PathSegment(operation="start", destination=item))
                 else:
                     # We have a previous coordinate, create a segment
-                    segments.append(
-                        PathSegment(operation=current_operation or "--", destination=item)
-                    )
+                    # Use "move" operation if no connector was specified (for placing nodes)
+                    operation = current_operation if current_operation is not None else "move"
+                    segments.append(PathSegment(operation=operation, destination=item))
                 current_coord = item
                 current_operation = None
             elif isinstance(item, str):
@@ -267,6 +272,7 @@ class TikzTransformer(Transformer):
         # Extract coordinate and optional label/modifier
         coord = items[0]
         coord_label = None
+        node_label = None
         modifier = None
 
         # Check remaining items for labels and modifiers
@@ -274,15 +280,19 @@ class TikzTransformer(Transformer):
             if isinstance(item, dict):
                 if item.get("_type") == "coordinate_label":
                     coord_label = item
+                elif item.get("_type") == "node_label":
+                    node_label = item
                 else:
                     # It's a modifier (circle, arc, etc.)
                     modifier = item
 
         # Build result based on what we found
-        if coord_label or modifier:
+        if coord_label or node_label or modifier:
             result = {"coord": coord}
             if coord_label:
                 result["coord_label"] = coord_label
+            if node_label:
+                result["node_label"] = node_label
             if modifier:
                 result["modifier"] = modifier
             return result
@@ -536,6 +546,28 @@ class TikzTransformer(Transformer):
                 options = item
 
         return {"_type": "coordinate_label", "name": name, "options": options}
+
+    def node_label(self, items):
+        """Extract inline node label.
+
+        Returns a dict marking this as a node to be created at the current path position.
+        Grammar: "node" options? node_name? "{" text "}"
+        """
+        options = {}
+        name = None
+        text = ""
+
+        for item in items:
+            if isinstance(item, dict):
+                if item.get("_type") == "node_name":
+                    name = item.get("name")
+                else:
+                    # It's options
+                    options = item
+            elif isinstance(item, str):
+                text = item
+
+        return {"_type": "node_label", "name": name, "text": text, "options": options}
 
     def name_with_vars(self, items):
         """Extract name that may contain variable references."""

@@ -101,6 +101,38 @@ class SVGConverter:
                 # Store it
                 self.named_coordinates[evaluated_name] = pos
 
+    def _process_inline_nodes(self, path: Path) -> list:
+        """Process inline node labels in path segments.
+
+        Creates SVG elements for nodes defined inline like: (x,y) node[options] (name) {text}
+
+        Args:
+            path: Path object containing segments
+
+        Returns:
+            List of SVG strings for the inline nodes
+        """
+        from ..parser.ast_nodes import Node
+
+        node_svgs = []
+        for segment in path.segments:
+            # Check if this segment has a node label
+            node_label = segment.options.get("node_label")
+            if node_label and segment.destination:
+                # Create a Node object from the label
+                node = Node(
+                    name=node_label.get("name"),
+                    position=segment.destination,
+                    text=node_label.get("text", ""),
+                    options=node_label.get("options", {}),
+                )
+                # Render the node
+                node_svg = self.visit_node(node)
+                if node_svg:
+                    node_svgs.append(node_svg)
+
+        return node_svgs
+
     def _check_for_arrows(self, ast: TikzPicture) -> bool:
         """Check if any statements use arrows."""
         return any(
@@ -166,7 +198,14 @@ class SVGConverter:
             if "->" in arrow_spec:
                 marker_end = ' marker-end="url(#arrow-end)"'
 
-        return f'<path d="{path_data}" style="{style}"{marker_start}{marker_end}/>'
+        result = f'<path d="{path_data}" style="{style}"{marker_start}{marker_end}/>'
+
+        # Process inline node labels and add them to the result
+        inline_nodes = self._process_inline_nodes(stmt.path)
+        if inline_nodes:
+            result = result + "\n  " + "\n  ".join(inline_nodes)
+
+        return result
 
     def visit_node(self, node: Node) -> str:
         """Convert node to SVG text element."""

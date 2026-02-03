@@ -92,6 +92,9 @@ class PathRenderer:
 
                 if op == "start":
                     path_data.append(f"M {x:.2f} {y:.2f}")
+                elif op == "move":
+                    # Move without drawing (for placing nodes without connecting lines)
+                    path_data.append(f"M {x:.2f} {y:.2f}")
                 elif op == "--":
                     path_data.append(f"L {x:.2f} {y:.2f}")
                 elif op == "..":

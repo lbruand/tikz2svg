@@ -26,8 +26,8 @@ filldraw_stmt: "\\filldraw" options? path ";"
 clip_stmt: "\\clip" options? path ";"
 
 // Path construction
-path: path_element (path_connector path_element)*
-    | path_element (path_connector path_element)* inline_foreach_path
+path: path_element (path_connector? path_element)*
+    | path_element (path_connector? path_element)* inline_foreach_path
 
 path_element: CYCLE
             | relative_coordinate (node_label | coordinate_label)? path_modifier?
@@ -76,7 +76,7 @@ circle_spec: "(" math_expr unit? ")"
 
 unit: "cm" | "mm" | "pt" | "em" | "ex"
 
-node_label: "node" options? "{" text "}"
+node_label: "node" options? node_name? "{" text "}"
 
 coordinate_label: "coordinate" options? "(" name_with_vars ")"
 
