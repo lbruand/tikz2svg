@@ -682,25 +682,11 @@ class TikzTransformer(Transformer):
         """Extract value, optionally with unit."""
         if items:
             # First item is the value
-            item = items[0]
-            value_str = None
-
-            if isinstance(item, (int, float)):
-                value_str = str(item)
-            elif isinstance(item, Token):
-                value_str = str(item.value)
-            elif isinstance(item, str):
-                value_str = item
-            else:
-                value_str = str(item)
+            value_str = self._to_string(items[0])
 
             # If there's a unit (second item), append it
             if len(items) > 1:
-                unit = items[1]
-                if isinstance(unit, Token):
-                    unit = str(unit.value)
-                elif not isinstance(unit, str):
-                    unit = str(unit)
+                unit = self._to_string(items[1])
                 return value_str + unit
 
             return value_str
@@ -709,10 +695,9 @@ class TikzTransformer(Transformer):
     def color(self, items):
         """Transform color specification."""
         if len(items) == 1:
-            return str(items[0])
-        else:
-            # Mixed color like blue!30!white
-            return "!".join(str(item) for item in items)
+            return self._to_string(items[0])
+        # Mixed color like blue!30!white
+        return "!".join(self._to_string(item) for item in items)
 
     def number(self, items):
         """Transform number."""
