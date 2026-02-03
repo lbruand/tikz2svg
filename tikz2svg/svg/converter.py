@@ -58,10 +58,9 @@ class SVGConverter:
             elements.append(self._create_arrow_markers())
 
         # Process all statements
-        for stmt in ast.statements:
-            svg_element = self.visit_statement(stmt)
-            if svg_element:
-                elements.append(svg_element)
+        elements.extend(
+            svg_element for stmt in ast.statements if (svg_element := self.visit_statement(stmt))
+        )
 
         # Build SVG document
         svg_content = "\n  ".join(elements)
@@ -73,10 +72,9 @@ class SVGConverter:
 
     def _check_for_arrows(self, ast: TikzPicture) -> bool:
         """Check if any statements use arrows."""
-        for stmt in ast.statements:
-            if isinstance(stmt, DrawStatement) and "arrow" in stmt.options:
-                return True
-        return False
+        return any(
+            isinstance(stmt, DrawStatement) and "arrow" in stmt.options for stmt in ast.statements
+        )
 
     def _create_arrow_markers(self) -> str:
         """Create SVG marker definitions for arrows."""
@@ -161,11 +159,7 @@ class SVGConverter:
 
     def visit_scope(self, scope: Scope) -> str:
         """Convert scope to SVG group."""
-        elements = []
-        for stmt in scope.statements:
-            element = self.visit_statement(stmt)
-            if element:
-                elements.append(element)
+        elements = [element for stmt in scope.statements if (element := self.visit_statement(stmt))]
 
         if not elements:
             return ""
@@ -273,11 +267,7 @@ class SVGConverter:
         """Convert layer environment to SVG group."""
         # For now, treat layers like scopes - just group the elements
         # In a full implementation, we'd reorder elements based on layer ordering
-        elements = []
-        for stmt in layer.statements:
-            element = self.visit_statement(stmt)
-            if element:
-                elements.append(element)
+        elements = [element for stmt in layer.statements if (element := self.visit_statement(stmt))]
 
         if not elements:
             return ""

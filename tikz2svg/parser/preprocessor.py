@@ -29,14 +29,10 @@ class TikzPreprocessor:
 
     def remove_comments(self, tikz_code: str) -> str:
         """Remove LaTeX comments (% to end of line)."""
-        lines = []
-        for line in tikz_code.split("\n"):
-            # Find % that's not escaped
-            match = re.search(r"(?<!\\)%", line)
-            if match:
-                # Remove everything from % onwards
-                line = line[: match.start()]
-            lines.append(line)
+        lines = [
+            line[: match.start()] if (match := re.search(r"(?<!\\)%", line)) else line
+            for line in tikz_code.split("\n")
+        ]
         return "\n".join(lines)
 
     def extract_tikzpicture(self, tikz_code: str) -> str:
