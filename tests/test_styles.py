@@ -98,7 +98,7 @@ def test_convert_filldraw_with_colors(converter):
 def test_convert_text_style_default(converter):
     """Test text style with default settings."""
     result = converter.convert_text_style({})
-    assert "font-size: 12px" in result
+    assert "font-size: 10px" in result
     assert "fill: #000000" in result
     assert "font-family: sans-serif" in result
 
@@ -106,31 +106,31 @@ def test_convert_text_style_default(converter):
 def test_convert_text_style_tiny(converter):
     """Test text style with tiny font."""
     result = converter.convert_text_style({"font": "tiny"})
-    assert "font-size: 8px" in result
+    assert "font-size: 7px" in result
 
 
 def test_convert_text_style_small(converter):
     """Test text style with small font."""
     result = converter.convert_text_style({"font": "small"})
-    assert "font-size: 10px" in result
+    assert "font-size: 9px" in result
 
 
 def test_convert_text_style_large(converter):
     """Test text style with large font."""
     result = converter.convert_text_style({"font": "large"})
-    assert "font-size: 16px" in result
+    assert "font-size: 14px" in result
 
 
 def test_convert_text_style_huge(converter):
     """Test text style with huge font."""
     result = converter.convert_text_style({"font": "huge"})
-    assert "font-size: 20px" in result
+    assert "font-size: 18px" in result
 
 
 def test_convert_text_style_unknown_font(converter):
-    """Test text style with unknown font defaults to 12px."""
+    """Test text style with unknown font defaults to 10px."""
     result = converter.convert_text_style({"font": "unknown"})
-    assert "font-size: 12px" in result
+    assert "font-size: 10px" in result
 
 
 def test_convert_text_style_with_color(converter):

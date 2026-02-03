@@ -146,8 +146,13 @@ class TikzTransformer(Transformer):
             elif isinstance(item, str):
                 # This is a path connector
                 current_operation = item
-            elif isinstance(item, dict) and item.get("_type") == "cycle":
-                segments.append(PathSegment(operation="cycle"))
+            elif isinstance(item, dict):
+                # This could be a complex operation (controls, arc, circle) or cycle
+                if item.get("_type") == "cycle":
+                    segments.append(PathSegment(operation="cycle"))
+                else:
+                    # Complex operation - store for next coordinate
+                    current_operation = item
 
             i += 1
 

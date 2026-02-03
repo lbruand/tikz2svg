@@ -104,6 +104,26 @@ The spacetime example exercises these features:
 - ✓ Fill with opacity
 - ✓ Text with different anchors (left, right, above)
 
+## Bug Fix: Bezier Curve Rendering
+
+During visual comparison, a critical bug was discovered and fixed:
+
+**Problem**: Bezier curves with control points (`.. controls (..) ..`) were being rendered as M (move) commands instead of Q (quadratic Bezier) or C (cubic Bezier) commands, causing missing visual elements.
+
+**Root Cause**: In the `path()` transformer (tikz2svg/parser/parser.py:72), when a Bezier curve connector returned a dict like `{"_type": "controls", "points": [...]}`, there was no handler for dict-type operations. The dict was skipped, leaving `current_operation` as `None`, which defaulted to "move" for the next coordinate.
+
+**Fix**: Added a handler for dict-type items representing complex operations (controls, arc, circle):
+```python
+elif isinstance(item, dict):
+    if item.get("_type") == "cycle":
+        segments.append(PathSegment(operation="cycle"))
+    else:
+        # Complex operation - store for next coordinate
+        current_operation = item
+```
+
+**Result**: Bezier curves now render correctly with **225 Q commands** in the spacetime diagram. Visual quality significantly improved.
+
 ## Conclusion
 
 **tikz2svg successfully renders the complex spacetime diagram** with high fidelity. All mathematical calculations are correct, all visual features are preserved, and the output is more efficient than the pdflatex/pdf2svg pipeline.

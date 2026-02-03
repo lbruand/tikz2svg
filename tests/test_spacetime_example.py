@@ -354,6 +354,25 @@ class TestSpacetimeIntegration:
 class TestSpacetimeRegressions:
     """Regression tests to ensure bugs don't reappear."""
 
+    def test_bezier_curves_not_moves(self, spacetime_code):
+        """Regression: ensure Bezier curves render as Q/C commands, not M (move)."""
+        parser = TikzParser()
+        ast = parser.parse(spacetime_code)
+        converter = SVGConverter()
+        svg = converter.convert(ast)
+
+        # Count Q (quadratic) and C (cubic) Bezier commands
+        q_count = svg.count(" Q ")
+        c_count = svg.count(" C ")
+
+        # Spacetime has Bezier curves with controls - should have Q or C commands
+        assert (
+            q_count + c_count > 0
+        ), "Bezier curves should produce Q or C commands, not just M (move)"
+
+        # Specifically, spacetime should have many Q commands (tested: 225)
+        assert q_count > 200, f"Expected >200 Q commands for Bezier curves, got {q_count}"
+
     def test_operator_in_expression(self, spacetime_code):
         """Test that operators in expressions are preserved."""
         parser = TikzParser()

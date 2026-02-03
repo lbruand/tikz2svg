@@ -101,30 +101,38 @@ class SVGConverter:
                 # Store it
                 self.named_coordinates[evaluated_name] = pos
 
-    def _process_inline_nodes(self, path: Path) -> list:
+    def _process_inline_nodes(self, path: Path, parent_options: Dict[str, Any] = None) -> list:
         """Process inline node labels in path segments.
 
         Creates SVG elements for nodes defined inline like: (x,y) node[options] (name) {text}
 
         Args:
             path: Path object containing segments
+            parent_options: Options from parent draw statement (for color inheritance)
 
         Returns:
             List of SVG strings for the inline nodes
         """
         from ..parser.ast_nodes import Node
 
+        if parent_options is None:
+            parent_options = {}
+
         node_svgs = []
         for segment in path.segments:
             # Check if this segment has a node label
             node_label = segment.options.get("node_label")
             if node_label and segment.destination:
+                # Merge parent options with node options (node options take precedence)
+                # This allows nodes to inherit color from the draw statement
+                merged_options = {**parent_options, **node_label.get("options", {})}
+
                 # Create a Node object from the label
                 node = Node(
                     name=node_label.get("name"),
                     position=segment.destination,
                     text=node_label.get("text", ""),
-                    options=node_label.get("options", {}),
+                    options=merged_options,
                 )
                 # Render the node
                 node_svg = self.visit_node(node)
@@ -201,11 +209,60 @@ class SVGConverter:
         result = f'<path d="{path_data}" style="{style}"{marker_start}{marker_end}/>'
 
         # Process inline node labels and add them to the result
-        inline_nodes = self._process_inline_nodes(stmt.path)
+        # Pass parent options so nodes can inherit color
+        inline_nodes = self._process_inline_nodes(stmt.path, stmt.options)
         if inline_nodes:
             result = result + "\n  " + "\n  ".join(inline_nodes)
 
         return result
+
+    def _get_text_anchor_attrs(self, options: Dict[str, Any]) -> tuple:
+        """Convert TikZ text anchors to SVG text-anchor and dominant-baseline.
+
+        Returns:
+            tuple: (text-anchor, dominant-baseline, dx, dy) for positioning
+        """
+        # Default: centered
+        text_anchor = "middle"
+        baseline = "middle"
+        dx = 0
+        dy = 0
+
+        # TikZ anchors: left, right, above, below, etc.
+        if options.get("right"):
+            text_anchor = "start"  # Text starts at position (flows right)
+            dx = 3  # Small offset from point
+        elif options.get("left"):
+            text_anchor = "end"  # Text ends at position (flows left)
+            dx = -3
+        elif options.get("above"):
+            baseline = "auto"  # Text baseline at position
+            dy = -3  # Move up
+        elif options.get("below"):
+            baseline = "hanging"  # Text hangs below position
+            dy = 3
+        elif options.get("above right"):
+            text_anchor = "start"
+            baseline = "auto"
+            dx = 3
+            dy = -3
+        elif options.get("above left"):
+            text_anchor = "end"
+            baseline = "auto"
+            dx = -3
+            dy = -3
+        elif options.get("below right"):
+            text_anchor = "start"
+            baseline = "hanging"
+            dx = 3
+            dy = 3
+        elif options.get("below left"):
+            text_anchor = "end"
+            baseline = "hanging"
+            dx = -3
+            dy = 3
+
+        return text_anchor, baseline, dx, dy
 
     def visit_node(self, node: Node) -> str:
         """Convert node to SVG text element."""
@@ -223,19 +280,54 @@ class SVGConverter:
         # Convert options to style
         style = self.style_converter.convert_text_style(node.options)
 
+        # Get text positioning attributes from anchor options
+        text_anchor, baseline, dx, dy = self._get_text_anchor_attrs(node.options)
+
         # Check for math mode and render if present
         if self.math_renderer.has_math(node.text):
             plain_text, math_svg = self.math_renderer.render(node.text)
             if math_svg:
-                # Embed the math SVG in a group positioned at the node location
-                # The math SVG needs to be scaled and positioned properly
-                return f'<g transform="translate({x:.2f},{y:.2f})">{math_svg}</g>'
+                # For math SVG, we need to handle anchors differently
+                # The math SVG has its own viewBox, so we need to translate based on anchor
+                # Extract width and height from the math SVG to calculate anchor offset
+                import re
+                width_match = re.search(r'width="([\d.]+)"', math_svg)
+                height_match = re.search(r'height="([\d.]+)"', math_svg)
+
+                math_width = float(width_match.group(1)) if width_match else 0
+                math_height = float(height_match.group(1)) if height_match else 0
+
+                # Scale down to approximately match 10px text height
+                scale = 0.45
+                scaled_width = math_width * scale
+                scaled_height = math_height * scale
+
+                # Adjust position based on anchor
+                math_x = x
+                math_y = y
+
+                # Horizontal anchoring
+                if text_anchor == "end":  # left anchor
+                    math_x -= scaled_width
+                elif text_anchor == "middle":
+                    math_x -= scaled_width / 2
+                # "start" (right anchor) - no adjustment, math starts at x
+
+                # Vertical anchoring - math SVG baseline is typically at the bottom
+                # Adjust to center the math vertically around the point
+                if baseline == "auto":  # above
+                    math_y -= scaled_height
+                elif baseline == "middle":
+                    math_y -= scaled_height / 2
+                # "hanging" (below) - no adjustment
+
+                return f'<g transform="translate({math_x:.2f},{math_y:.2f}) scale({scale})">{math_svg}</g>'
             else:
                 # Fallback to plain text if rendering failed
-                return f'<text x="{x:.2f}" y="{y:.2f}" style="{style}" text-anchor="middle" dominant-baseline="middle">{plain_text}</text>'
+                return f'<text x="{x+dx:.2f}" y="{y+dy:.2f}" style="{style}" text-anchor="{text_anchor}" dominant-baseline="{baseline}">{plain_text}</text>'
         else:
-            # No math mode, use regular text
-            return f'<text x="{x:.2f}" y="{y:.2f}" style="{style}" text-anchor="middle" dominant-baseline="middle">{node.text}</text>'
+            # No math mode, use regular text with anchor offsets
+            return f'<text x="{x+dx:.2f}" y="{y+dy:.2f}" style="{style}" text-anchor="{text_anchor}" dominant-baseline="{baseline}">{node.text}</text>'
 
     def visit_coordinate_definition(self, coord_def: CoordinateDefinition) -> None:
         """Store named coordinate (doesn't produce SVG output)."""

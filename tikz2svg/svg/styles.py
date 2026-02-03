@@ -96,21 +96,21 @@ class StyleConverter:
         """Convert options for text elements."""
         styles = []
 
-        # Font size
+        # Font size - TikZ default is ~10pt which is approximately 10px
         if "font" in options:
             font = options["font"]
             if "tiny" in str(font):
-                styles.append("font-size: 8px")
+                styles.append("font-size: 7px")
             elif "small" in str(font):
-                styles.append("font-size: 10px")
+                styles.append("font-size: 9px")
             elif "large" in str(font):
-                styles.append("font-size: 16px")
+                styles.append("font-size: 14px")
             elif "huge" in str(font):
-                styles.append("font-size: 20px")
+                styles.append("font-size: 18px")
             else:
-                styles.append("font-size: 12px")
+                styles.append("font-size: 10px")
         else:
-            styles.append("font-size: 12px")
+            styles.append("font-size: 10px")
 
         # Color
         color = self.get_color(options, default="black")
