@@ -80,6 +80,7 @@ with open("output.svg", "w") as f:
 - **Relative**: `++(dx,dy)` (updates position), `+(dx,dy)` (temporary)
 - **Mixed**: Polar with relative `++(45:1cm)`
 - **Variable names**: `\coordinate (P\i)` with dynamic variable substitution in names
+- **Inline definitions**: `(x,y) coordinate(name)` - define coordinates within paths
 
 ### Path Operations
 - `--` - Straight lines
@@ -200,11 +201,13 @@ tikz2svg/
 │   │   ├── geometry.py        # Geometric calculations
 │   │   └── styles.py          # Style conversions
 │   └── cli.py          # Command-line interface
-├── tests/              # Comprehensive test suite (268 tests)
+├── tests/              # Comprehensive test suite (317 tests)
 │   ├── test_parser.py         # Grammar & parsing tests
 │   ├── test_phase*.py         # Feature-specific tests
 │   ├── test_loop_expander.py  # Loop expansion tests
 │   ├── test_styles.py         # Style conversion tests
+│   ├── test_inline_coordinates.py  # Inline coordinate tests
+│   ├── test_string_evaluator.py    # String evaluation tests
 │   └── test_svg_converter.py  # SVG output tests
 └── pyproject.toml      # Package configuration
 ```
@@ -214,7 +217,7 @@ tikz2svg/
 - **Proper AST**: Clean tree structure for transformations
 - **Modular**: Separate parsing, evaluation, and conversion
 - **Extensible**: Easy to add new TikZ features
-- **Well-tested**: 96%+ test coverage with 268 comprehensive tests
+- **Well-tested**: 96%+ test coverage with 317 comprehensive tests
 
 ## Development
 
@@ -234,8 +237,8 @@ pytest tests/test_parser.py -v
 ### Test Results
 
 ```
-308 tests total
-308 passed (100%)
+317 tests total
+317 passed (100%)
 0 skipped
 Coverage: 96%+
 ```

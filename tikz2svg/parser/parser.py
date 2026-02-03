@@ -95,15 +95,27 @@ class TikzTransformer(Transformer):
             if isinstance(item, dict) and "coord" in item:
                 coord = item["coord"]
                 modifier = item.get("modifier")
+                coord_label = item.get("coord_label")
+
+                # Create segment options if there's a coordinate label
+                seg_options = {}
+                if coord_label:
+                    seg_options["coordinate_name"] = coord_label.get("name")
 
                 if current_coord is None:
                     # First coordinate
                     start_coord = coord
-                    segments.append(PathSegment(operation="start", destination=coord))
+                    segments.append(
+                        PathSegment(operation="start", destination=coord, options=seg_options)
+                    )
                 else:
                     # Connected coordinate
                     segments.append(
-                        PathSegment(operation=current_operation or "--", destination=coord)
+                        PathSegment(
+                            operation=current_operation or "--",
+                            destination=coord,
+                            options=seg_options,
+                        )
                     )
 
                 current_coord = coord
@@ -252,12 +264,30 @@ class TikzTransformer(Transformer):
         if isinstance(items[0], Token) and items[0].type == "CYCLE":
             return {"_type": "cycle"}
 
-        # Handle coordinate with optional modifier
-        if len(items) > 1 and isinstance(items[1], dict):
-            # Has a modifier (circle or arc)
-            return {"coord": items[0], "modifier": items[1]}
+        # Extract coordinate and optional label/modifier
+        coord = items[0]
+        coord_label = None
+        modifier = None
 
-        return items[0]
+        # Check remaining items for labels and modifiers
+        for item in items[1:]:
+            if isinstance(item, dict):
+                if item.get("_type") == "coordinate_label":
+                    coord_label = item
+                else:
+                    # It's a modifier (circle, arc, etc.)
+                    modifier = item
+
+        # Build result based on what we found
+        if coord_label or modifier:
+            result = {"coord": coord}
+            if coord_label:
+                result["coord_label"] = coord_label
+            if modifier:
+                result["modifier"] = modifier
+            return result
+
+        return coord
 
     def path_modifier(self, items):
         """Transform path modifier."""
@@ -490,6 +520,22 @@ class TikzTransformer(Transformer):
     def node_position(self, items):
         """Extract node position."""
         return items[0]  # Should be a Coordinate
+
+    def coordinate_label(self, items):
+        """Extract inline coordinate label.
+
+        Returns a dict marking this as a coordinate definition.
+        """
+        name = None
+        options = {}
+
+        for item in items:
+            if isinstance(item, str):
+                name = item
+            elif isinstance(item, dict):
+                options = item
+
+        return {"_type": "coordinate_label", "name": name, "options": options}
 
     def name_with_vars(self, items):
         """Extract name that may contain variable references."""

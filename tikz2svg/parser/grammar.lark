@@ -30,8 +30,8 @@ path: path_element (path_connector path_element)*
     | path_element (path_connector path_element)* inline_foreach_path
 
 path_element: CYCLE
-            | relative_coordinate node_label? path_modifier?
-            | coordinate node_label? path_modifier?
+            | relative_coordinate (node_label | coordinate_label)? path_modifier?
+            | coordinate (node_label | coordinate_label)? path_modifier?
 
 // Inline foreach within path
 inline_foreach_path: "\\foreach" foreach_vars foreach_options? "in" foreach_values "{" path_segments "}"
@@ -77,6 +77,8 @@ circle_spec: "(" math_expr unit? ")"
 unit: "cm" | "mm" | "pt" | "em" | "ex"
 
 node_label: "node" options? "{" text "}"
+
+coordinate_label: "coordinate" options? "(" name_with_vars ")"
 
 // Coordinates - supporting multiple formats
 coordinate: "(" coord_spec ")"

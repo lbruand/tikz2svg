@@ -78,6 +78,25 @@ class SVGConverter:
 
         return svg_doc
 
+    def _process_inline_coordinates(self, path: Path) -> None:
+        """Process inline coordinate labels in path segments.
+
+        Stores named coordinates defined inline like: (x,y) coordinate(name)
+
+        Args:
+            path: Path object containing segments
+        """
+        for segment in path.segments:
+            # Check if this segment has a coordinate name
+            coord_name = segment.options.get("coordinate_name")
+            if coord_name and segment.destination:
+                # Resolve the coordinate position
+                pos = self.coord_resolver.resolve(segment.destination)
+                # Evaluate variables in coordinate name
+                evaluated_name = self.string_evaluator.evaluate(coord_name)
+                # Store it
+                self.named_coordinates[evaluated_name] = pos
+
     def _check_for_arrows(self, ast: TikzPicture) -> bool:
         """Check if any statements use arrows."""
         return any(
@@ -123,6 +142,9 @@ class SVGConverter:
 
     def visit_draw_statement(self, stmt: DrawStatement) -> str:
         """Convert draw statement to SVG path."""
+        # Process inline coordinate labels before rendering path
+        self._process_inline_coordinates(stmt.path)
+
         path_data = self.path_renderer.render_path(stmt.path)
 
         # Evaluate options with variables
