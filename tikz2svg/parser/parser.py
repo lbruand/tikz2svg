@@ -956,13 +956,25 @@ class TikzTransformer(Transformer):
             return float(items[0])
         return 0.0
 
-    def math_op(self, items):
-        """Transform math operator to string."""
-        if not items:
-            return ""
-        if isinstance(items[0], Token):
-            return items[0].value
-        return str(items[0])
+    def plus(self, items):
+        """Transform + operator."""
+        return "+"
+
+    def minus(self, items):
+        """Transform - operator."""
+        return "-"
+
+    def star(self, items):
+        """Transform * operator."""
+        return "*"
+
+    def slash(self, items):
+        """Transform / operator."""
+        return "/"
+
+    def caret(self, items):
+        """Transform ^ operator."""
+        return "^"
 
     def math_expr(self, items):
         """Transform math expression into string representation."""

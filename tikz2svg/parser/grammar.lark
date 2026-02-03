@@ -199,7 +199,11 @@ flag: COLOR_SPEC | CNAME
 
 math_function: "sin" | "cos" | "tan" | "sqrt" | "abs" | "exp" | "ln" | "log"
 
-math_op: PLUS | "-" | "*" | "/" | "^"
+?math_op: "+" -> plus
+        | "-" -> minus
+        | "*" -> star
+        | "/" -> slash
+        | "^" -> caret
 
 // Text content - can include nested braces for LaTeX commands
 text: text_parts
