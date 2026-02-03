@@ -7,6 +7,7 @@ from ..evaluator.math_eval import MathEvaluator
 from ..parser.ast_nodes import *
 from .coordinate_resolver import CoordinateResolver
 from .geometry import CoordinateTransformer
+from .option_processor import OptionProcessor
 from .styles import StyleConverter
 
 
@@ -38,24 +39,8 @@ class SVGConverter:
             self.coord_transformer, self.evaluator, self.named_coordinates
         )
 
-    def _safe_evaluate(self, value, evaluator: Optional[MathEvaluator] = None):
-        """Safely evaluate a value with fallback.
-
-        Args:
-            value: Value to evaluate (string expression or literal)
-            evaluator: MathEvaluator to use (defaults to self.evaluator)
-
-        Returns:
-            Evaluated result, or original value if evaluation fails
-        """
-        if not isinstance(value, str):
-            return value
-
-        eval_instance = evaluator or self.evaluator
-        try:
-            return eval_instance.evaluate(value)
-        except Exception:
-            return value
+        # Option processing
+        self.option_processor = OptionProcessor(self.evaluator)
 
     def convert(self, ast: TikzPicture) -> str:
         """Convert TikZ AST to SVG string."""
@@ -131,7 +116,7 @@ class SVGConverter:
         path_data = self.convert_path(stmt.path)
 
         # Evaluate options with variables
-        evaluated_options = self._evaluate_options(stmt.options)
+        evaluated_options = self.option_processor.process(stmt.options)
         style = self.style_converter.convert(evaluated_options, stmt.command)
 
         # Check for arrows
@@ -363,53 +348,6 @@ class SVGConverter:
 
             return f"A {radius:.2f} {radius:.2f} 0 {large_arc} {sweep} {end_x:.2f} {end_y:.2f}"
 
-    def _evaluate_options(self, options: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Evaluate expressions in options dictionary.
-
-        Args:
-            options: Options dictionary with possible expressions
-
-        Returns:
-            Options with evaluated values
-        """
-        from lark import Token
-
-        evaluated = {}
-        for key, value in options.items():
-            # If value is a Token, convert to string first
-            if isinstance(value, Token):
-                value = str(value.value)
-
-            eval_succeeded = False
-
-            # Try to evaluate if it looks like an expression
-            if isinstance(value, str):
-                # Check if it's a variable reference (single word that might be a variable)
-                if value.isalpha() and value not in ["true", "false", "none"]:
-                    # Try as variable first
-                    try:
-                        evaluated[key] = self.evaluator.evaluate(f"\\{value}")
-                        eval_succeeded = True
-                    except Exception:
-                        pass
-
-                # Try to evaluate if it has operators or backslash (only if not already evaluated)
-                if not eval_succeeded and (
-                    "\\" in value or any(op in value for op in ["+", "-", "*", "/", "("])
-                ):
-                    try:
-                        evaluated[key] = self.evaluator.evaluate(value)
-                        eval_succeeded = True
-                    except Exception:
-                        pass
-
-            # Keep as-is if no evaluation succeeded
-            if not eval_succeeded:
-                evaluated[key] = value
-
-        return evaluated
-
     def visit_node(self, node: Node) -> str:
         """Convert node to SVG text element."""
         if node.position:
@@ -477,13 +415,13 @@ class SVGConverter:
                 if num_vars == 1:
                     # Single variable
                     var_name = loop.variables[0]
-                    value_eval = self._safe_evaluate(value, parent_evaluator)
+                    value_eval = self.option_processor.safe_evaluate(value, parent_evaluator)
                     self.context.set_variable(var_name, value_eval)
                 elif num_vars > 1 and isinstance(value, (tuple, list)):
                     # Multiple variables with paired values
                     for i, var_name in enumerate(loop.variables):
                         if i < len(value):
-                            val = self._safe_evaluate(value[i], parent_evaluator)
+                            val = self.option_processor.safe_evaluate(value[i], parent_evaluator)
                             self.context.set_variable(var_name, val)
 
                 # Handle evaluate clause
