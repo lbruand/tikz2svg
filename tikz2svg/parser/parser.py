@@ -326,6 +326,14 @@ class TikzTransformer(Transformer):
         """Extract node position."""
         return items[0]  # Should be a Coordinate
 
+    def name_with_vars(self, items):
+        """Extract name that may contain variable references."""
+        from lark import Token
+
+        if items and isinstance(items[0], Token):
+            return str(items[0].value)
+        return str(items[0]) if items else ""
+
     def coordinate_stmt(self, items):
         """Transform coordinate definition."""
         options = {}

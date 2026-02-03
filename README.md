@@ -79,6 +79,7 @@ with open("output.svg", "w") as f:
 - **Named**: `(A)`, `(node.north)`, `(node.south east)`
 - **Relative**: `++(dx,dy)` (updates position), `+(dx,dy)` (temporary)
 - **Mixed**: Polar with relative `++(45:1cm)`
+- **Variable names**: `\coordinate (P\i)` with dynamic variable substitution in names
 
 ### Path Operations
 - `--` - Straight lines
@@ -166,6 +167,16 @@ with open("output.svg", "w") as f:
 \end{tikzpicture}
 ```
 
+### With Dynamic Coordinates
+```latex
+\begin{tikzpicture}
+  \foreach \i in {0,1,2} {
+    \coordinate (P\i) at (\i,\i);
+  }
+  \draw (P0) -- (P1) -- (P2);
+\end{tikzpicture}
+```
+
 **Output:** Valid SVG with proper paths, colors, text, and transformations
 
 ## Architecture
@@ -188,9 +199,11 @@ tikz2svg/
 │   │   ├── geometry.py        # Geometric calculations
 │   │   └── styles.py          # Style conversions
 │   └── cli.py          # Command-line interface
-├── tests/              # Comprehensive test suite (124 tests)
+├── tests/              # Comprehensive test suite (268 tests)
 │   ├── test_parser.py         # Grammar & parsing tests
 │   ├── test_phase*.py         # Feature-specific tests
+│   ├── test_loop_expander.py  # Loop expansion tests
+│   ├── test_styles.py         # Style conversion tests
 │   └── test_svg_converter.py  # SVG output tests
 └── pyproject.toml      # Package configuration
 ```
@@ -200,7 +213,7 @@ tikz2svg/
 - **Proper AST**: Clean tree structure for transformations
 - **Modular**: Separate parsing, evaluation, and conversion
 - **Extensible**: Easy to add new TikZ features
-- **Well-tested**: 98.4% test coverage
+- **Well-tested**: 96%+ test coverage with 268 comprehensive tests
 
 ## Development
 
@@ -220,14 +233,13 @@ pytest tests/test_parser.py -v
 ### Test Results
 
 ```
-124 tests total
-122 passed (98.4%)
-2 skipped (documented edge cases)
-Coverage: 85%+
+268 tests total
+267 passed (99.6%)
+1 skipped (documented edge case)
+Coverage: 96%+
 ```
 
-**Skipped tests** (advanced features requiring architectural changes):
-- Variable substitution in coordinate names: `\coordinate (P\i)`
+**Skipped test** (advanced feature requiring architectural changes):
 - Inline foreach within paths: `\draw (0,0) \foreach \i in {...} { -- ... };`
 
 ## Performance Benchmark
@@ -243,9 +255,9 @@ Coverage: 85%+
 
 While tikz2svg supports the most commonly used TikZ features (covering ~95% of real-world usage), some advanced features are not yet implemented:
 
-**Documented Edge Cases:**
-- Variable substitution in coordinate names: `\coordinate (P\i)` where `\i` is dynamic
+**Documented Edge Case:**
 - Inline `\foreach` within paths: `\draw (0,0) \foreach \i {...} { -- ... };`
+  (requires foreach as a path element, not just a statement)
 
 **Advanced TikZ Features Not Supported:**
 - Complex TeX conditionals (`\ifthenelse`, `\ifnum`)

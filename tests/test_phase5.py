@@ -83,9 +83,6 @@ class TestNamedCoordinates:
         assert "<svg" in svg
         assert "<path" in svg
 
-    @pytest.mark.skip(
-        reason="Variables in coordinate names not supported: \\coordinate (P\\i) requires expression parsing in names"
-    )
     def test_named_coordinates_in_loop(self, parser, converter):
         """Test named coordinates created in loops."""
         tikz = r"""

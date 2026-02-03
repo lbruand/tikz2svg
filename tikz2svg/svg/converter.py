@@ -1,6 +1,6 @@
 """Convert TikZ AST to SVG."""
 
-from typing import Dict, Optional, Tuple
+from typing import Tuple
 
 from ..evaluator.context import EvaluationContext
 from ..evaluator.math_eval import MathEvaluator
@@ -10,6 +10,7 @@ from .geometry import CoordinateTransformer
 from .loop_expander import ForeachLoopExpander
 from .option_processor import OptionProcessor
 from .path_renderer import PathRenderer
+from .string_evaluator import StringEvaluator
 from .styles import StyleConverter
 
 
@@ -34,6 +35,9 @@ class SVGConverter:
         # Math evaluation
         self.context = EvaluationContext()
         self.evaluator = MathEvaluator(self.context)
+
+        # String evaluation
+        self.string_evaluator = StringEvaluator(self.context)
 
         # Coordinate resolution
         self.named_coordinates: Dict[str, Tuple[float, float]] = {}
@@ -147,7 +151,9 @@ class SVGConverter:
 
         # Store named node position
         if node.name:
-            self.named_coordinates[node.name] = (x, y)
+            # Evaluate variables in node name (e.g., P\i -> P0)
+            evaluated_name = self.string_evaluator.evaluate(node.name)
+            self.named_coordinates[evaluated_name] = (x, y)
 
         # Convert options to style
         style = self.style_converter.convert_text_style(node.options)
@@ -158,7 +164,9 @@ class SVGConverter:
         """Store named coordinate (doesn't produce SVG output)."""
         if coord_def.position:
             pos = self.coord_resolver.resolve(coord_def.position)
-            self.named_coordinates[coord_def.name] = pos
+            # Evaluate variables in coordinate name (e.g., P\i -> P0)
+            evaluated_name = self.string_evaluator.evaluate(coord_def.name)
+            self.named_coordinates[evaluated_name] = pos
         return None
 
     def visit_scope(self, scope: Scope) -> str:
