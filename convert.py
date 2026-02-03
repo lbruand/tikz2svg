@@ -4,10 +4,10 @@ Convert TikZ LaTeX files to SVG using pdflatex and pdf2svg
 """
 
 import os
-import sys
-import subprocess
-import tempfile
 import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 

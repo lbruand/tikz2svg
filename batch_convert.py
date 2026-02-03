@@ -5,6 +5,7 @@ Batch convert all TikZ files in the library to SVG
 
 import sys
 from pathlib import Path
+
 from convert import convert_tex_to_svg
 
 

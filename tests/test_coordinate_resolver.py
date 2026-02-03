@@ -1,10 +1,11 @@
 """Unit tests for CoordinateResolver."""
 
 import pytest
-from tikz2svg.svg.coordinate_resolver import CoordinateResolver
-from tikz2svg.svg.geometry import CoordinateTransformer
+
 from tikz2svg.evaluator.math_eval import MathEvaluator
 from tikz2svg.parser.ast_nodes import Coordinate
+from tikz2svg.svg.coordinate_resolver import CoordinateResolver
+from tikz2svg.svg.geometry import CoordinateTransformer
 
 
 @pytest.fixture

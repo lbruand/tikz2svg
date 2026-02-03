@@ -2,8 +2,9 @@
 
 import pytest
 from lark import Token
-from tikz2svg.svg.option_processor import OptionProcessor
+
 from tikz2svg.evaluator.math_eval import MathEvaluator
+from tikz2svg.svg.option_processor import OptionProcessor
 
 
 @pytest.fixture

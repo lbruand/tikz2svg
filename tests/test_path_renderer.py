@@ -1,11 +1,12 @@
 """Unit tests for PathRenderer."""
 
 import pytest
-from tikz2svg.svg.path_renderer import PathRenderer
+
+from tikz2svg.evaluator.math_eval import MathEvaluator
+from tikz2svg.parser.ast_nodes import Coordinate, Path, PathSegment
 from tikz2svg.svg.coordinate_resolver import CoordinateResolver
 from tikz2svg.svg.geometry import CoordinateTransformer
-from tikz2svg.evaluator.math_eval import MathEvaluator
-from tikz2svg.parser.ast_nodes import Path, PathSegment, Coordinate
+from tikz2svg.svg.path_renderer import PathRenderer
 
 
 @pytest.fixture

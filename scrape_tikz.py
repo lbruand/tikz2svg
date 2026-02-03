@@ -4,14 +4,15 @@ Scraper for TikZ examples from TeXample.net
 Downloads TikZ code and metadata from the gallery
 """
 
+import json
 import os
 import re
-import json
 import time
-import requests
 from pathlib import Path
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
 
 
 class TikZScraper:
