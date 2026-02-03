@@ -68,7 +68,14 @@ class StyleConverter:
         else:  # draw
             stroke_color = self.get_color(options, default="black")
             styles.append(f"stroke: {stroke_color}")
-            styles.append("fill: none")
+
+            # Check if fill is specified in draw command
+            fill_color = self.get_color(options, key="fill", default=None)
+            if fill_color:
+                styles.append(f"fill: {fill_color}")
+            else:
+                styles.append("fill: none")
+
             stroke_width = self.get_line_width(options)
             styles.append(f"stroke-width: {stroke_width}px")
 
@@ -78,11 +85,25 @@ class StyleConverter:
             if dash_array:
                 styles.append(f"stroke-dasharray: {dash_array}")
 
-        # Opacity
+        # Opacity - handle both general opacity and fill-specific opacity
         if "opacity" in options:
             opacity = options["opacity"]
-            if isinstance(opacity, (int, float)):
-                styles.append(f"opacity: {opacity}")
+            # Handle both numeric and string values
+            try:
+                opacity_val = float(opacity) if isinstance(opacity, str) else opacity
+                styles.append(f"opacity: {opacity_val}")
+            except (ValueError, TypeError):
+                pass
+
+        # Fill opacity (separate from stroke opacity)
+        if "fill opacity" in options:
+            fill_opacity = options["fill opacity"]
+            # Handle both numeric and string values
+            try:
+                fill_opacity_val = float(fill_opacity) if isinstance(fill_opacity, str) else fill_opacity
+                styles.append(f"fill-opacity: {fill_opacity_val}")
+            except (ValueError, TypeError):
+                pass
 
         # Line cap and join
         if "line cap" in options:
@@ -134,11 +155,19 @@ class StyleConverter:
             SVG color string
         """
         # Check specific key first
-        if key and key in options:
-            color_value = options[key]
-            return self.parse_color(color_value)
+        if key:
+            if key in options:
+                color_value = options[key]
+                return self.parse_color(color_value)
+            else:
+                # If specific key requested but not found, return default
+                # Don't fall through to general color search
+                if default:
+                    return self.parse_color(default)
+                else:
+                    return None
 
-        # Check for color options
+        # Check for color options (only when no specific key requested)
         for color_name in self.COLORS.keys():
             if color_name in options and options[color_name]:
                 return self.COLORS[color_name]
