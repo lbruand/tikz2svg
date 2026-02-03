@@ -957,9 +957,29 @@ class TikzTransformer(Transformer):
 
     def text(self, items):
         """Extract text content."""
+        # items[0] will be text_parts result
         if items:
-            return str(items[0])
+            return items[0]
         return ""
+
+    def text_parts(self, items):
+        """Combine text parts including nested braces."""
+        result = []
+        for item in items:
+            if isinstance(item, str):
+                result.append(item)
+            else:
+                # It's from nested_braces, already a string
+                result.append(str(item))
+        return "".join(result)
+
+    def nested_braces(self, items):
+        """Handle nested braces in text."""
+        # Reconstruct {content}
+        if items:
+            content = "".join(str(item) for item in items)
+            return "{" + content + "}"
+        return "{}"
 
     def quoted_string(self, items):
         """Extract quoted string."""

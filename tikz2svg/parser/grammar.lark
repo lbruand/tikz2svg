@@ -201,8 +201,12 @@ math_function: "sin" | "cos" | "tan" | "sqrt" | "abs" | "exp" | "ln" | "log"
 
 operator: "+" | "-" | "*" | "/" | "^"
 
-// Text content (simplified for now)
-text: TEXT_CONTENT
+// Text content - can include nested braces for LaTeX commands
+text: text_parts
+
+text_parts: (TEXT_CONTENT | nested_braces)+
+
+nested_braces: "{" text_parts? "}"
 
 quoted_string: ESCAPED_STRING
 
@@ -215,7 +219,7 @@ CYCLE: "cycle"
 COLOR_SPEC: /[a-zA-Z]+(!([0-9]+|[a-zA-Z]+))+/
 NAME_WITH_VARS: /[a-zA-Z_][a-zA-Z0-9_\-]*(\\[a-zA-Z][a-zA-Z0-9_\-]*)*/
 CNAME: /[a-zA-Z_][a-zA-Z0-9_\-]*/
-TEXT_CONTENT: /[^{}]+/
+TEXT_CONTENT: /([^{}\\]|\\[a-zA-Z]+|\\[^a-zA-Z])+/
 NUMBER: /[0-9]+\.?[0-9]*/
 SIGNED_NUMBER: /[+-]?[0-9]+\.?[0-9]*/
 

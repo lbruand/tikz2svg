@@ -8,6 +8,7 @@ from ..parser.ast_nodes import *
 from .coordinate_resolver import CoordinateResolver
 from .geometry import CoordinateTransformer
 from .loop_expander import ForeachLoopExpander
+from .math_renderer import MathRenderer
 from .option_processor import OptionProcessor
 from .path_renderer import PathRenderer
 from .string_evaluator import StringEvaluator
@@ -38,6 +39,9 @@ class SVGConverter:
 
         # String evaluation
         self.string_evaluator = StringEvaluator(self.context)
+
+        # Math rendering
+        self.math_renderer = MathRenderer()
 
         # Coordinate resolution
         self.named_coordinates: Dict[str, Tuple[float, float]] = {}
@@ -180,7 +184,19 @@ class SVGConverter:
         # Convert options to style
         style = self.style_converter.convert_text_style(node.options)
 
-        return f'<text x="{x:.2f}" y="{y:.2f}" style="{style}" text-anchor="middle" dominant-baseline="middle">{node.text}</text>'
+        # Check for math mode and render if present
+        if self.math_renderer.has_math(node.text):
+            plain_text, math_svg = self.math_renderer.render(node.text)
+            if math_svg:
+                # Embed the math SVG in a group positioned at the node location
+                # The math SVG needs to be scaled and positioned properly
+                return f'<g transform="translate({x:.2f},{y:.2f})">{math_svg}</g>'
+            else:
+                # Fallback to plain text if rendering failed
+                return f'<text x="{x:.2f}" y="{y:.2f}" style="{style}" text-anchor="middle" dominant-baseline="middle">{plain_text}</text>'
+        else:
+            # No math mode, use regular text
+            return f'<text x="{x:.2f}" y="{y:.2f}" style="{style}" text-anchor="middle" dominant-baseline="middle">{node.text}</text>'
 
     def visit_coordinate_definition(self, coord_def: CoordinateDefinition) -> None:
         """Store named coordinate (doesn't produce SVG output)."""
