@@ -5,7 +5,7 @@ from tikz2svg.parser.parser import TikzParser
 from tikz2svg.svg.converter import SVGConverter
 
 # Read the input file
-with open('library/0001-sri-yantra.tex', 'r') as f:
+with open("library/0001-sri-yantra.tex", "r") as f:
     tikz_code = f.read()
 
 print("=" * 80)
@@ -63,10 +63,10 @@ try:
     print()
 
     # Analyze SVG output
-    path_count = svg.count('<path')
-    text_count = svg.count('<text')
-    group_count = svg.count('<g')
-    circle_count = svg.count('circle')
+    path_count = svg.count("<path")
+    text_count = svg.count("<text")
+    group_count = svg.count("<g")
+    circle_count = svg.count("circle")
 
     print(f"SVG Analysis:")
     print(f"  - Path elements: {path_count}")
@@ -76,10 +76,11 @@ try:
     print()
 
     # Save SVG output
-    output_file = 'outputs/sri-yantra.svg'
+    output_file = "outputs/sri-yantra.svg"
     import os
-    os.makedirs('outputs', exist_ok=True)
-    with open(output_file, 'w') as f:
+
+    os.makedirs("outputs", exist_ok=True)
+    with open(output_file, "w") as f:
         f.write(svg)
     print(f"✓ SVG saved to: {output_file}")
     print()
@@ -113,6 +114,7 @@ except Exception as e:
     print("Error details:")
     print("-" * 80)
     import traceback
+
     traceback.print_exc()
     print("-" * 80)
     print()

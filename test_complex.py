@@ -5,7 +5,7 @@ from tikz2svg.parser.parser import TikzParser
 from tikz2svg.svg.converter import SVGConverter
 
 # Read the input file
-with open('inputs/complex_demo.tex', 'r') as f:
+with open("inputs/complex_demo.tex", "r") as f:
     tikz_code = f.read()
 
 print("=" * 80)
@@ -44,9 +44,9 @@ try:
     print()
 
     # Analyze SVG output
-    path_count = svg.count('<path')
-    text_count = svg.count('<text')
-    group_count = svg.count('<g')
+    path_count = svg.count("<path")
+    text_count = svg.count("<text")
+    group_count = svg.count("<g")
     print(f"SVG Analysis:")
     print(f"  - Path elements: {path_count}")
     print(f"  - Text elements: {text_count}")
@@ -54,10 +54,11 @@ try:
     print()
 
     # Save SVG output
-    output_file = 'outputs/complex_demo.svg'
+    output_file = "outputs/complex_demo.svg"
     import os
-    os.makedirs('outputs', exist_ok=True)
-    with open(output_file, 'w') as f:
+
+    os.makedirs("outputs", exist_ok=True)
+    with open(output_file, "w") as f:
         f.write(svg)
     print(f"✓ SVG saved to: {output_file}")
     print()
@@ -88,6 +89,7 @@ try:
 except Exception as e:
     print(f"✗ Error: {e}")
     import traceback
+
     traceback.print_exc()
     print()
     print("=" * 80)

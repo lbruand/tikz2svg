@@ -67,9 +67,7 @@ def test_resolve_relative_cartesian(setup_resolver):
 
     current_pos = (100, 100)
     coord = Coordinate(
-        system="relative",
-        values=[1, 1],
-        modifiers={"inner_system": "cartesian", "operator": "++"}
+        system="relative", values=[1, 1], modifiers={"inner_system": "cartesian", "operator": "++"}
     )
 
     result = resolver.resolve(coord, current_pos)
@@ -86,7 +84,7 @@ def test_resolve_relative_polar(setup_resolver):
     coord = Coordinate(
         system="relative",
         values=[0, 1],  # 0 degrees, radius 1
-        modifiers={"inner_system": "polar", "operator": "++"}
+        modifiers={"inner_system": "polar", "operator": "++"},
     )
 
     result = resolver.resolve(coord, current_pos)
@@ -102,9 +100,7 @@ def test_resolve_relative_no_current_pos_with_values(setup_resolver):
     resolver, transformer, _ = setup_resolver
 
     coord = Coordinate(
-        system="relative",
-        values=[1, 2],
-        modifiers={"inner_system": "cartesian", "operator": "++"}
+        system="relative", values=[1, 2], modifiers={"inner_system": "cartesian", "operator": "++"}
     )
 
     result = resolver.resolve(coord, current_pos=None)
@@ -119,9 +115,7 @@ def test_resolve_relative_no_current_pos_no_values(setup_resolver):
     resolver, transformer, _ = setup_resolver
 
     coord = Coordinate(
-        system="relative",
-        values=[],
-        modifiers={"inner_system": "cartesian", "operator": "++"}
+        system="relative", values=[], modifiers={"inner_system": "cartesian", "operator": "++"}
     )
 
     result = resolver.resolve(coord, current_pos=None)
@@ -243,9 +237,7 @@ def test_resolve_relative_unknown_inner_system(setup_resolver):
 
     current_pos = (100, 100)
     coord = Coordinate(
-        system="relative",
-        values=[1, 1],
-        modifiers={"inner_system": "unknown", "operator": "++"}
+        system="relative", values=[1, 1], modifiers={"inner_system": "unknown", "operator": "++"}
     )
 
     result = resolver.resolve(coord, current_pos)

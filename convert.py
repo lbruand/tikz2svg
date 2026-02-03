@@ -2,6 +2,7 @@
 """
 Convert TikZ LaTeX files to SVG using pdflatex and pdf2svg
 """
+
 import os
 import sys
 import subprocess
@@ -39,10 +40,10 @@ def convert_tex_to_svg(input_path, output_path):
         # Compile LaTeX to PDF
         print(f"Compiling {input_path.name} to PDF...")
         result = subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', '-shell-escape', str(temp_tex)],
+            ["pdflatex", "-interaction=nonstopmode", "-shell-escape", str(temp_tex)],
             cwd=tmpdir,
             capture_output=True,
-            text=True
+            text=True,
         )
 
         if result.returncode != 0:
@@ -52,7 +53,7 @@ def convert_tex_to_svg(input_path, output_path):
             sys.exit(1)
 
         # Find the generated PDF
-        pdf_file = tmpdir / input_path.with_suffix('.pdf').name
+        pdf_file = tmpdir / input_path.with_suffix(".pdf").name
 
         if not pdf_file.exists():
             print(f"Error: PDF file was not generated: {pdf_file}")
@@ -61,9 +62,7 @@ def convert_tex_to_svg(input_path, output_path):
         # Convert PDF to SVG
         print(f"Converting PDF to SVG...")
         result = subprocess.run(
-            ['pdf2svg', str(pdf_file), str(output_path)],
-            capture_output=True,
-            text=True
+            ["pdf2svg", str(pdf_file), str(output_path)], capture_output=True, text=True
         )
 
         if result.returncode != 0:
@@ -75,10 +74,10 @@ def convert_tex_to_svg(input_path, output_path):
     print(f"✓ Successfully created {output_path}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Default: convert input01.tex to output01.svg
-    input_file = 'inputs/input01.tex'
-    output_file = 'outputs/input01.svg'
+    input_file = "inputs/input01.tex"
+    output_file = "outputs/input01.svg"
 
     if len(sys.argv) > 1:
         input_file = sys.argv[1]

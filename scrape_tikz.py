@@ -3,6 +3,7 @@
 Scraper for TikZ examples from TeXample.net
 Downloads TikZ code and metadata from the gallery
 """
+
 import os
 import re
 import json
@@ -20,9 +21,7 @@ class TikZScraper:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (TikZ Library Builder)'
-        })
+        self.session.headers.update({"User-Agent": "Mozilla/5.0 (TikZ Library Builder)"})
 
     def get_example_links(self, max_pages=None):
         """Get all example links from the gallery"""
@@ -44,25 +43,25 @@ class TikZScraper:
                 print(f"  Error fetching page {page}: {e}")
                 break
 
-            soup = BeautifulSoup(response.text, 'html.parser')
+            soup = BeautifulSoup(response.text, "html.parser")
 
             # Find example links (they're in article titles)
-            articles = soup.find_all('article')
+            articles = soup.find_all("article")
             if not articles:
                 print(f"  No more examples found on page {page}")
                 break
 
             for article in articles:
-                title_link = article.find('h2', class_='entry-title')
-                if title_link and title_link.find('a'):
-                    link = title_link.find('a')['href']
+                title_link = article.find("h2", class_="entry-title")
+                if title_link and title_link.find("a"):
+                    link = title_link.find("a")["href"]
                     full_link = urljoin(self.base_url, link)
                     example_links.append(full_link)
 
             print(f"  Found {len(articles)} examples on page {page}")
 
             # Check if there's a next page
-            next_link = soup.find('a', {'rel': 'next'})
+            next_link = soup.find("a", {"rel": "next"})
             if not next_link:
                 break
 
@@ -75,60 +74,60 @@ class TikZScraper:
     def extract_tikz_code(self, soup):
         """Extract TikZ code from the example page"""
         # Look for code blocks
-        code_blocks = soup.find_all(['pre', 'code'])
+        code_blocks = soup.find_all(["pre", "code"])
 
         for block in code_blocks:
             text = block.get_text()
             # Check if it looks like LaTeX/TikZ code
-            if '\\documentclass' in text or '\\begin{tikzpicture}' in text:
+            if "\\documentclass" in text or "\\begin{tikzpicture}" in text:
                 return text.strip()
 
         return None
 
     def extract_metadata(self, soup, url):
         """Extract metadata from the example page"""
-        metadata = {'url': url}
+        metadata = {"url": url}
 
         # Title
-        title_elem = soup.find('h1', class_='entry-title')
+        title_elem = soup.find("h1", class_="entry-title")
         if not title_elem:
-            title_elem = soup.find('h1')
+            title_elem = soup.find("h1")
         if title_elem:
-            metadata['title'] = title_elem.get_text().strip()
+            metadata["title"] = title_elem.get_text().strip()
 
         # Author
-        author_elem = soup.find('span', class_='username')
+        author_elem = soup.find("span", class_="username")
         if author_elem:
-            metadata['author'] = author_elem.get_text().strip()
+            metadata["author"] = author_elem.get_text().strip()
 
         # Date
-        date_elem = soup.find('time')
+        date_elem = soup.find("time")
         if date_elem:
-            metadata['date'] = date_elem.get('datetime') or date_elem.get_text().strip()
+            metadata["date"] = date_elem.get("datetime") or date_elem.get_text().strip()
 
         # Tags
         tags = []
-        tag_elems = soup.find_all('a', href=re.compile(r'/tikz/tag/'))
+        tag_elems = soup.find_all("a", href=re.compile(r"/tikz/tag/"))
         for tag in tag_elems:
             tags.append(tag.get_text().strip())
         if tags:
-            metadata['tags'] = tags
+            metadata["tags"] = tags
 
         # Categories
         categories = []
-        cat_elems = soup.find_all('a', href=re.compile(r'/tikz/examples/category/'))
+        cat_elems = soup.find_all("a", href=re.compile(r"/tikz/examples/category/"))
         for cat in cat_elems:
             categories.append(cat.get_text().strip())
         if categories:
-            metadata['categories'] = categories
+            metadata["categories"] = categories
 
         return metadata
 
     def sanitize_filename(self, text):
         """Create a safe filename from text"""
         # Remove or replace invalid characters
-        text = re.sub(r'[^\w\s-]', '', text)
-        text = re.sub(r'[-\s]+', '-', text)
+        text = re.sub(r"[^\w\s-]", "", text)
+        text = re.sub(r"[-\s]+", "-", text)
         return text.lower()[:50]  # Limit length
 
     def download_example(self, url, index):
@@ -140,7 +139,7 @@ class TikZScraper:
             print(f"  Error: {e}")
             return False
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, "html.parser")
 
         # Extract code and metadata
         code = self.extract_tikz_code(soup)
@@ -151,17 +150,17 @@ class TikZScraper:
             return False
 
         # Create filename
-        title = metadata.get('title', f'example-{index:04d}')
+        title = metadata.get("title", f"example-{index:04d}")
         filename = f"{index:04d}-{self.sanitize_filename(title)}"
 
         # Save .tex file
         tex_file = self.output_dir / f"{filename}.tex"
-        with open(tex_file, 'w', encoding='utf-8') as f:
+        with open(tex_file, "w", encoding="utf-8") as f:
             f.write(code)
 
         # Save metadata
         json_file = self.output_dir / f"{filename}.json"
-        with open(json_file, 'w', encoding='utf-8') as f:
+        with open(json_file, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
 
         print(f"  ✓ Saved: {filename}")
@@ -193,16 +192,18 @@ class TikZScraper:
         print(f"Files saved to: {self.output_dir.absolute()}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Scrape TikZ examples from TeXample.net')
-    parser.add_argument('--output', '-o', default='library',
-                        help='Output directory for downloaded examples (default: library)')
-    parser.add_argument('--max-pages', type=int,
-                        help='Maximum number of gallery pages to scrape')
-    parser.add_argument('--max-examples', type=int,
-                        help='Maximum number of examples to download')
+    parser = argparse.ArgumentParser(description="Scrape TikZ examples from TeXample.net")
+    parser.add_argument(
+        "--output",
+        "-o",
+        default="library",
+        help="Output directory for downloaded examples (default: library)",
+    )
+    parser.add_argument("--max-pages", type=int, help="Maximum number of gallery pages to scrape")
+    parser.add_argument("--max-examples", type=int, help="Maximum number of examples to download")
 
     args = parser.parse_args()
 

@@ -2,6 +2,7 @@
 """
 Batch convert all TikZ files in the library to SVG
 """
+
 import sys
 from pathlib import Path
 from convert import convert_tex_to_svg
@@ -35,7 +36,7 @@ def batch_convert(input_dir="library", output_dir="library/svg", pattern="*.tex"
     failed = []
 
     for i, tex_file in enumerate(tex_files, 1):
-        svg_file = output_path / tex_file.with_suffix('.svg').name
+        svg_file = output_path / tex_file.with_suffix(".svg").name
         print(f"[{i}/{len(tex_files)}] {tex_file.name}")
 
         try:
@@ -56,16 +57,25 @@ def batch_convert(input_dir="library", output_dir="library/svg", pattern="*.tex"
     print(f"\nSVG files saved to: {output_path.absolute()}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Batch convert TikZ files to SVG')
-    parser.add_argument('--input', '-i', default='library',
-                        help='Input directory containing .tex files (default: library)')
-    parser.add_argument('--output', '-o', default='library/svg',
-                        help='Output directory for .svg files (default: library/svg)')
-    parser.add_argument('--pattern', '-p', default='*.tex',
-                        help='File pattern to match (default: *.tex)')
+    parser = argparse.ArgumentParser(description="Batch convert TikZ files to SVG")
+    parser.add_argument(
+        "--input",
+        "-i",
+        default="library",
+        help="Input directory containing .tex files (default: library)",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        default="library/svg",
+        help="Output directory for .svg files (default: library/svg)",
+    )
+    parser.add_argument(
+        "--pattern", "-p", default="*.tex", help="File pattern to match (default: *.tex)"
+    )
 
     args = parser.parse_args()
 

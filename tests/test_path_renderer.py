@@ -25,13 +25,9 @@ def test_render_simple_line(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
-            PathSegment(
-                operation="--",
-                destination=Coordinate(system="cartesian", values=[1, 1])
-            ),
+            PathSegment(operation="--", destination=Coordinate(system="cartesian", values=[1, 1])),
         ]
     )
 
@@ -56,13 +52,9 @@ def test_render_cycle(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
-            PathSegment(
-                operation="--",
-                destination=Coordinate(system="cartesian", values=[1, 0])
-            ),
+            PathSegment(operation="--", destination=Coordinate(system="cartesian", values=[1, 0])),
             PathSegment(operation="cycle", destination=None),
         ]
     )
@@ -93,13 +85,9 @@ def test_render_circle_operation(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
-            PathSegment(
-                operation={"_type": "circle", "spec": {"radius": 1.0}},
-                destination=None
-            ),
+            PathSegment(operation={"_type": "circle", "spec": {"radius": 1.0}}, destination=None),
         ]
     )
 
@@ -329,8 +317,7 @@ def test_render_controls_operation(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
             PathSegment(
                 operation={
@@ -340,7 +327,7 @@ def test_render_controls_operation(setup_renderer):
                         Coordinate(system="cartesian", values=[70, 70]),
                     ],
                 },
-                destination=Coordinate(system="cartesian", values=[100, 100])
+                destination=Coordinate(system="cartesian", values=[100, 100]),
             ),
         ]
     )
@@ -357,12 +344,10 @@ def test_render_curve_operation(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
             PathSegment(
-                operation="..",
-                destination=Coordinate(system="cartesian", values=[100, 100])
+                operation="..", destination=Coordinate(system="cartesian", values=[100, 100])
             ),
         ]
     )
@@ -379,12 +364,10 @@ def test_render_rectangle_operation(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
             PathSegment(
-                operation="rectangle",
-                destination=Coordinate(system="cartesian", values=[100, 100])
+                operation="rectangle", destination=Coordinate(system="cartesian", values=[100, 100])
             ),
         ]
     )
@@ -402,12 +385,10 @@ def test_render_grid_operation(setup_renderer):
     path = Path(
         segments=[
             PathSegment(
-                operation="start",
-                destination=Coordinate(system="cartesian", values=[0, 0])
+                operation="start", destination=Coordinate(system="cartesian", values=[0, 0])
             ),
             PathSegment(
-                operation="grid",
-                destination=Coordinate(system="cartesian", values=[100, 100])
+                operation="grid", destination=Coordinate(system="cartesian", values=[100, 100])
             ),
         ]
     )

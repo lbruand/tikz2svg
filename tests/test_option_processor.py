@@ -125,13 +125,7 @@ def test_process_mixed_options(setup_processor):
 
     evaluator.context.set_variable("x", 10)
 
-    options = {
-        "color": "red",
-        "width": "2*3",
-        "variable": "x",
-        "number": 5,
-        "expression": "\\x+5"
-    }
+    options = {"color": "red", "width": "2*3", "variable": "x", "number": 5, "expression": "\\x+5"}
     result = processor.process(options)
 
     assert result["color"] == "red"
