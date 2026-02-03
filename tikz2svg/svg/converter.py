@@ -32,6 +32,25 @@ class SVGConverter:
         self.context = EvaluationContext()
         self.evaluator = MathEvaluator(self.context)
 
+    def _safe_evaluate(self, value, evaluator: Optional[MathEvaluator] = None):
+        """Safely evaluate a value with fallback.
+
+        Args:
+            value: Value to evaluate (string expression or literal)
+            evaluator: MathEvaluator to use (defaults to self.evaluator)
+
+        Returns:
+            Evaluated result, or original value if evaluation fails
+        """
+        if not isinstance(value, str):
+            return value
+
+        eval_instance = evaluator or self.evaluator
+        try:
+            return eval_instance.evaluate(value)
+        except Exception:
+            return value
+
     def convert(self, ast: TikzPicture) -> str:
         """Convert TikZ AST to SVG string."""
         elements = []
@@ -526,25 +545,13 @@ class SVGConverter:
                 if num_vars == 1:
                     # Single variable
                     var_name = loop.variables[0]
-                    # Evaluate the value if it's a string expression
-                    if isinstance(value, str):
-                        try:
-                            value_eval = parent_evaluator.evaluate(value)
-                        except Exception:
-                            value_eval = value
-                    else:
-                        value_eval = value
+                    value_eval = self._safe_evaluate(value, parent_evaluator)
                     self.context.set_variable(var_name, value_eval)
                 elif num_vars > 1 and isinstance(value, (tuple, list)):
                     # Multiple variables with paired values
                     for i, var_name in enumerate(loop.variables):
                         if i < len(value):
-                            val = value[i]
-                            if isinstance(val, str):
-                                try:
-                                    val = parent_evaluator.evaluate(val)
-                                except Exception:
-                                    pass
+                            val = self._safe_evaluate(value[i], parent_evaluator)
                             self.context.set_variable(var_name, val)
 
                 # Handle evaluate clause

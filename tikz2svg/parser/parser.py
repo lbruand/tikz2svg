@@ -32,8 +32,16 @@ class TikzTransformer(Transformer):
         """Pass through statement."""
         return items[0]
 
-    def draw_stmt(self, items):
-        """Transform draw statement."""
+    def _create_draw_statement(self, command: str, items: list) -> DrawStatement:
+        """Helper to create draw-like statements from items.
+
+        Args:
+            command: Command type (draw, fill, filldraw, clip)
+            items: Parsed items containing options and path
+
+        Returns:
+            DrawStatement with extracted options and path
+        """
         options = {}
         path = None
 
@@ -43,46 +51,23 @@ class TikzTransformer(Transformer):
             elif isinstance(item, Path):
                 path = item
 
-        return DrawStatement(command="draw", options=options, path=path or Path())
+        return DrawStatement(command=command, options=options, path=path or Path())
+
+    def draw_stmt(self, items):
+        """Transform draw statement."""
+        return self._create_draw_statement("draw", items)
 
     def fill_stmt(self, items):
         """Transform fill statement."""
-        options = {}
-        path = None
-
-        for item in items:
-            if isinstance(item, dict):
-                options = item
-            elif isinstance(item, Path):
-                path = item
-
-        return DrawStatement(command="fill", options=options, path=path or Path())
+        return self._create_draw_statement("fill", items)
 
     def filldraw_stmt(self, items):
         """Transform filldraw statement."""
-        options = {}
-        path = None
-
-        for item in items:
-            if isinstance(item, dict):
-                options = item
-            elif isinstance(item, Path):
-                path = item
-
-        return DrawStatement(command="filldraw", options=options, path=path or Path())
+        return self._create_draw_statement("filldraw", items)
 
     def clip_stmt(self, items):
         """Transform clip statement."""
-        options = {}
-        path = None
-
-        for item in items:
-            if isinstance(item, dict):
-                options = item
-            elif isinstance(item, Path):
-                path = item
-
-        return DrawStatement(command="clip", options=options, path=path or Path())
+        return self._create_draw_statement("clip", items)
 
     def path(self, items):
         """Transform path into segments."""
@@ -212,9 +197,14 @@ class TikzTransformer(Transformer):
         """Transform arc option."""
         # Items will be like ["start", "angle", "=", number]
         if len(items) >= 3:
-            key = " ".join(str(items[i]) for i in range(len(items) - 1) if str(items[i]) != "=")
+            key_parts = [
+                self._to_string(items[i])
+                for i in range(len(items) - 1)
+                if self._to_string(items[i]) != "="
+            ]
+            key = " ".join(key_parts)
             # Keep value as string for math expressions
-            value = str(items[-1])
+            value = self._to_string(items[-1])
             return {key.replace(" ", "_"): value}
         return {}
 
@@ -229,14 +219,14 @@ class TikzTransformer(Transformer):
         """Transform circle specification."""
         if items:
             # Keep radius as string for math expressions
-            radius = str(items[0]) if isinstance(items[0], Token) else items[0]
-            unit = items[1] if len(items) > 1 else "cm"
-            return {"radius": radius, "unit": str(unit) if unit else "cm"}
+            radius = self._to_string(items[0])
+            unit = self._to_string(items[1]) if len(items) > 1 else "cm"
+            return {"radius": radius, "unit": unit}
         return {"radius": "1.0", "unit": "cm"}
 
     def unit(self, items):
         """Transform unit specification."""
-        return str(items[0]) if items else "cm"
+        return self._to_string(items[0]) if items else "cm"
 
     def controls_clause(self, items):
         """Transform Bezier controls clause."""
@@ -672,16 +662,20 @@ class TikzTransformer(Transformer):
         return items  # Already handled in option
 
     def _to_string(self, item):
-        """Convert token or list to string."""
+        """Convert token, list, or value to string.
+
+        Args:
+            item: Token, string, list, or other value
+
+        Returns:
+            String representation
+        """
         if isinstance(item, str):
             return item
         elif isinstance(item, Token):
             return str(item.value)
         elif isinstance(item, list):
-            return " ".join(
-                str(i) if isinstance(i, Token) else str(i.value) if hasattr(i, "value") else str(i)
-                for i in item
-            )
+            return " ".join(self._to_string(i) for i in item)
         return str(item)
 
     def value(self, items):
